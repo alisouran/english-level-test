@@ -52,6 +52,15 @@ body.authed #gate{display:none!important}
 .top-bar .level-badge{
   padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:600;
   background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff;
+  transition:transform 0.3s ease;
+}
+.top-bar .level-badge.badge-pulse{
+  animation:badgePop 0.5s ease;
+}
+@keyframes badgePop{
+  0%{transform:scale(1)}
+  40%{transform:scale(1.25)}
+  100%{transform:scale(1)}
 }
 .top-bar .score-dot{font-size:0.75rem;color:#6c6c7e}
 
@@ -136,37 +145,6 @@ body.authed #gate{display:none!important}
 .option:disabled{cursor:default;opacity:0.7}
 .opt-text{flex:1}
 
-/* ─── Feedback after answer ─── */
-.feedback{
-  margin-top:16px;padding:14px 16px;border-radius:12px;display:none;
-  animation:fadeIn 0.3s ease;font-size:0.9rem;line-height:1.6;
-}
-.feedback.correct{display:block;background:rgba(92,170,116,0.08);border:1px solid rgba(92,170,116,0.2);color:#9deab4}
-.feedback.wrong{display:block;background:rgba(229,115,115,0.08);border:1px solid rgba(229,115,115,0.2);color:#e57373}
-.feedback .fb-title{font-weight:600;margin-bottom:4px}
-.feedback .fb-detail{color:#b8b0c0;font-size:0.85rem}
-
-.next-btn{
-  margin-top:16px;width:100%;padding:14px;border:none;border-radius:12px;
-  font:inherit;font-size:1rem;font-weight:700;cursor:pointer;
-  background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff;
-  transition:0.2s;display:none;
-}
-.next-btn:hover{opacity:0.9}
-
-/* ─── Level-up animation ─── */
-.level-up-overlay{
-  position:fixed;inset:0;z-index:200;
-  display:none;align-items:center;justify-content:center;flex-direction:column;
-  background:rgba(10,10,15,0.92);backdrop-filter:blur(8px);
-}
-.level-up-overlay.show{display:flex;animation:fadeIn 0.3s ease}
-.level-up-icon{font-size:4rem;margin-bottom:1rem;animation:bounce 0.6s ease}
-@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
-.level-up-text{font-size:1.5rem;font-weight:800;background:linear-gradient(135deg,#6c5ce7,#a29bfe);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.level-up-label{color:#8a8a9e;font-size:0.9rem;margin-top:4px}
-.level-up-btn{margin-top:20px;padding:12px 28px;border:none;border-radius:12px;font:inherit;font-weight:700;background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff;cursor:pointer}
-
 /* ─── Essay Screen ─── */
 .essay-section{margin-top:16px}
 .essay-section h3{font-size:1.1rem;font-weight:600;margin-bottom:8px}
@@ -248,7 +226,7 @@ body.authed #gate{display:none!important}
 
 /* ─── Print ─── */
 @media print{
-  .top-bar,.progress-track,#gate,.level-up-overlay{display:none!important}
+  .top-bar,.progress-track,#gate{display:none!important}
   .app{display:block!important}body.authed .app{display:block!important}
   .main{padding:0;max-width:100%}.screen{display:block!important}
 }
@@ -303,19 +281,6 @@ body.authed #gate{display:none!important}
       <div class="quest-category" id="qCategory">Grammar</div>
       <div class="quest-text" id="qText">Loading...</div>
       <div class="options" id="qOptions"></div>
-      <div class="feedback" id="feedback">
-        <div class="fb-title" id="fbTitle"></div>
-        <div class="fb-detail" id="fbDetail"></div>
-      </div>
-      <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Continue →</button>
-    </div>
-
-    <!-- ═══ Level Up ═══ -->
-    <div class="level-up-overlay" id="levelUp">
-      <div class="level-up-icon">🎉</div>
-      <div class="level-up-text" id="luTitle">Level Up!</div>
-      <div class="level-up-label" id="luLabel">You reached B1</div>
-      <button class="level-up-btn" onclick="dismissLevelUp()">Continue</button>
     </div>
 
     <!-- ═══ Essay ═══ -->
@@ -389,7 +354,6 @@ body.authed #gate{display:none!important}
 
 // ─── CEFR Labels ───
 const CEFR = {0:"A1",1:"A2",2:"B1",3:"B2",4:"C1",5:"C2"};
-const CEFR_FULL = {0:"Beginner (A1)",1:"Elementary (A2)",2:"Intermediate (B1)",3:"Upper-Intermediate (B2)",4:"Advanced (C1)",5:"Mastery (C2)"};
 
 // ─── IRT Constants & Helpers ───
 const ITEM_DIFFICULTY = [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0];
@@ -681,19 +645,18 @@ function renderQuestion() {
     optsEl.appendChild(el);
   });
   
-  document.getElementById('feedback').className = 'feedback';
-  document.getElementById('feedback').style.display = 'none';
-  document.getElementById('nextBtn').style.display = 'none';
-  
   state.qStartTime = Date.now();
   updateProgress();
   updateTopBar(data.level);
   
-  // Show level-up overlay if we moved to a higher level
-  if (state.currentLevel > prevLevel) {
-    document.getElementById('luTitle').textContent = '🎉 Level Up!';
-    document.getElementById('luLabel').textContent = `You reached ${CEFR_FULL[state.currentLevel]}`;
-    document.getElementById('levelUp').classList.add('show');
+  // Animate badge on level change
+  if (state.currentLevel !== prevLevel) {
+    let badge = document.getElementById('topLevel');
+    badge.classList.remove('badge-pulse');
+    // Force reflow
+    void badge.offsetWidth;
+    badge.classList.add('badge-pulse');
+    updateTopBar(state.currentLevel);
   }
 }
 
@@ -733,21 +696,11 @@ function selectAnswer(idx, data) {
   state.theta = iret.theta;
   state.thetaSE = iret.se;
   
-  // Feedback
-  let fb = document.getElementById('feedback');
-  if(correct) {
-    fb.className = 'feedback correct';
-    document.getElementById('fbTitle').textContent = '✓ Correct!';
-    document.getElementById('fbDetail').textContent = 'Nice work!';
-  } else {
-    fb.className = 'feedback wrong';
-    document.getElementById('fbTitle').textContent = '✗ Not quite';
-    document.getElementById('fbDetail').textContent = `The correct answer was: ${data.opts[data.a]}`;
-  }
-  fb.style.display = 'block';
-  
-  document.getElementById('nextBtn').style.display = 'block';
   updateTopBar(data.level);
+  
+  // Auto-advance after brief pause
+  let delay = correct ? 400 : 800;
+  setTimeout(nextQuestion, delay);
 }
 
 function nextQuestion() {
@@ -761,16 +714,6 @@ function nextQuestion() {
     return;
   }
   renderQuestion();
-}
-
-function showLevelUp(newLevel) {
-  document.getElementById('luTitle').textContent = '🎉 Level Up!';
-  document.getElementById('luLabel').textContent = `You reached ${CEFR_FULL[state.currentLevel]}`;
-  document.getElementById('levelUp').classList.add('show');
-}
-
-function dismissLevelUp() {
-  document.getElementById('levelUp').classList.remove('show');
 }
 
 function finishQuestions() {
