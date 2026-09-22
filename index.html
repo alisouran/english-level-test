@@ -358,55 +358,58 @@ const CEFR = {0:"A1",1:"A2",2:"B1",3:"B2",4:"C1",5:"C2"};
 // ─── IRT Constants & Helpers ───
 const ITEM_DIFFICULTY = [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0];
 const THETA_PRIOR_MEAN = 0;
-const THETA_PRIOR_VAR = 2.0;
+const THETA_PRIOR_SD = 2.0;
 const MIN_QUESTIONS = 20;
 const MAX_QUESTIONS = 30;
 const THETA_SE_STOP = 0.5;
 const REEVAL_INTERVAL = 5;
 
-function logistic(x) { return 1 / (1 + Math.exp(-x)); }
-
-function getTimeWeight(time) {
-  if (time < 5) return 1.0;
-  if (time < 15) return 0.7;
-  return 0.4;
+function logistic(x) {
+  x = Math.max(-20, Math.min(20, x));
+  return 1 / (1 + Math.exp(-x));
 }
 
-function estimateIRT() {
-  let theta = THETA_PRIOR_MEAN;
-  for (let iter = 0; iter < 30; iter++) {
-    let firstDeriv = (THETA_PRIOR_MEAN - theta) / THETA_PRIOR_VAR;
-    let secondDeriv = -1 / THETA_PRIOR_VAR;
-    for (let r of state.responses) {
+function eapEstimate(responses) {
+  // Bayesian EAP: grid from -4.0 to 4.0
+  const GRID = [];
+  for (let i = -40; i <= 40; i++) GRID.push(i * 0.1);
+  
+  let posterior = GRID.map(t => {
+    let ll = -0.5 * ((t - THETA_PRIOR_MEAN) / THETA_PRIOR_SD) ** 2;
+    for (let r of responses) {
       let b = ITEM_DIFFICULTY[r.level];
-      let w = getTimeWeight(r.time);
-      let p = logistic(theta - b);
-      firstDeriv += w * ((r.correct ? 1 : 0) - p);
-      secondDeriv -= w * p * (1 - p);
+      let p = logistic(t - b);
+      ll += r.correct ? Math.log(Math.max(p, 1e-10)) : Math.log(Math.max(1 - p, 1e-10));
     }
-    if (Math.abs(secondDeriv) < 1e-10) break;
-    let delta = firstDeriv / secondDeriv;
-    theta -= delta;
-    if (Math.abs(delta) < 1e-6) break;
+    return Math.exp(ll);
+  });
+  
+  let total = posterior.reduce((a, b) => a + b, 0);
+  if (total === 0) return { theta: 0, se: THETA_PRIOR_SD };
+  posterior = posterior.map(p => p / total);
+  
+  let theta = 0, varSum = 0;
+  for (let i = 0; i < GRID.length; i++) {
+    theta += GRID[i] * posterior[i];
+    varSum += posterior[i] * (GRID[i] - theta) ** 2;
   }
-  let info = 1 / THETA_PRIOR_VAR;
-  for (let r of state.responses) {
-    let b = ITEM_DIFFICULTY[r.level];
-    let w = getTimeWeight(r.time);
-    let p = logistic(theta - b);
-    info += w * p * (1 - p);
-  }
-  return { theta, se: 1 / Math.sqrt(info) };
+  // Second pass with final theta
+  theta = 0;
+  for (let i = 0; i < GRID.length; i++) theta += GRID[i] * posterior[i];
+  for (let i = 0; i < GRID.length; i++) varSum += posterior[i] * (GRID[i] - theta) ** 2;
+  
+  return { theta: Math.round(theta * 100) / 100, se: Math.round(Math.sqrt(Math.max(varSum, 0.01)) * 1000) / 1000 };
 }
 
 function levelFromTheta(theta) {
-  let closest = 0;
-  let minDist = Infinity;
-  for (let l = 0; l <= 5; l++) {
-    let d = Math.abs(theta - ITEM_DIFFICULTY[l]);
-    if (d < minDist) { minDist = d; closest = l; }
-  }
-  return closest;
+  theta = Math.max(-2.5, Math.min(3.5, theta));
+  // A1<-1.3, A2<-0.3, B1<0.5, B2<1.3, C1<2.2, C2>=2.2
+  if (theta < -1.3) return 0;
+  if (theta < -0.3) return 1;
+  if (theta < 0.5) return 2;
+  if (theta < 1.3) return 3;
+  if (theta < 2.2) return 4;
+  return 5;
 }
 
 function pickQuestion(targetLevel) {
@@ -522,7 +525,7 @@ const QUESTIONS = [
 let state = {
   currentLevel: 1,       // start at A2
   theta: 0,              // IRT ability estimate
-  thetaSE: Math.sqrt(THETA_PRIOR_VAR),  // standard error
+  thetaSE: THETA_PRIOR_SD,  // standard error
   totalQuestions: 0,
   currentQ: 0,           // questions answered so far
   responses: [],         // {qId, level, correct, time, answer}
@@ -543,24 +546,26 @@ const ESSAY_PROMPTS = [
 function getAdaptiveNextQuestion() {
   let targetLevel = state.currentLevel;
   let lastResponse = state.totalQuestions > 0 ? state.responses[state.responses.length - 1] : null;
-  let transitionReason = '';
   
-  if (state.totalQuestions > 0) {
+  if (state.totalQuestions > 0 && lastResponse) {
     if (state.questionsSinceReeval >= REEVAL_INTERVAL) {
-      let iret = estimateIRT();
+      // Full IRT re-evaluation every 5 questions
+      let iret = eapEstimate(state.responses);
       state.theta = iret.theta;
       state.thetaSE = iret.se;
       state.questionsSinceReeval = 0;
       targetLevel = levelFromTheta(state.theta);
-      transitionReason = `IRT re-evaluation (θ=${state.theta.toFixed(2)}, SE=${state.thetaSE.toFixed(2)})`;
-    } else {
-      if (lastResponse.correct && state.currentLevel < 5) {
-        targetLevel = state.currentLevel + 1;
-      } else if (!lastResponse.correct && state.currentLevel > 0) {
-        targetLevel = state.currentLevel - 1;
+    } else if (state.totalQuestions < 5) {
+      // First 5: cautious - no immediate level-up on correct
+      if (lastResponse.correct) {
+        targetLevel = lastResponse.level; // stay at same level
       } else {
-        targetLevel = state.currentLevel;
+        targetLevel = Math.max(0, lastResponse.level - 1);
       }
+    } else {
+      // After 5: step with EAP check
+      if (lastResponse.correct) targetLevel = Math.min(5, lastResponse.level + 1);
+      else targetLevel = Math.max(0, lastResponse.level - 1);
     }
   }
   
@@ -578,14 +583,7 @@ function getAdaptiveNextQuestion() {
   }
   
   if (targetLevel !== state.currentLevel) {
-    if (!transitionReason) {
-      transitionReason = lastResponse && lastResponse.correct ? 'correct → harder' : 'wrong → easier';
-    }
-    state.levelTransitions.push({
-      from: state.currentLevel,
-      to: targetLevel,
-      reason: transitionReason
-    });
+    state.levelTransitions.push({ from: state.currentLevel, to: targetLevel, reason: 'adaptive' });
     state.currentLevel = targetLevel;
   }
   
@@ -602,7 +600,7 @@ function startTest() {
   state.started = true;
   state.currentLevel = 1;
   state.theta = 0;
-  state.thetaSE = Math.sqrt(THETA_PRIOR_VAR);
+  state.thetaSE = THETA_PRIOR_SD;
   state.responses = [];
   state.essays = [];
   state.currentQ = 0;
@@ -669,10 +667,9 @@ function selectAnswer(idx, data) {
   let time = (Date.now() - state.qStartTime) / 1000;
   let correct = idx === data.a;
   
-  // Mark selected
+  // Mark only the correct answer green
   opts.forEach((o, i) => {
     if(i === data.a) o.classList.add('correct');
-    if(i === idx && !correct) o.classList.add('wrong');
     if(i === idx) o.classList.add('selected');
   });
   
@@ -692,7 +689,7 @@ function selectAnswer(idx, data) {
   state.questionsSinceReeval++;
   
   // Update IRT estimate after each response
-  let iret = estimateIRT();
+  let iret = eapEstimate(state.responses);
   state.theta = iret.theta;
   state.thetaSE = iret.se;
   
@@ -898,7 +895,7 @@ function resetTest() {
     state = {
       currentLevel: 1,
       theta: 0,
-      thetaSE: Math.sqrt(THETA_PRIOR_VAR),
+      thetaSE: THETA_PRIOR_SD,
       totalQuestions: 0,
       currentQ: 0,
       responses: [],
