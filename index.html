@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="robots" content="noindex, nofollow">
+<title>LingoQuest — Adaptive English Level Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════
+   LingoQuest — Adaptive English Test
+   ═══════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{
+  font-family:'Inter','Vazirmatn',sans-serif;
+  background:#0a0a0f;color:#e0d8d0;line-height:1.6;
+  min-height:100dvh;overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ─── Gate ─── */
+#gate{
+  position:fixed;inset:0;z-index:99999;
+  background:linear-gradient(135deg,#0a0a0f,#14101c);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+}
+#gate .g-icon{font-size:3rem;margin-bottom:0.5rem}
+#gate .g-title{font-size:clamp(1.5rem,5vw,2rem);font-weight:800;background:linear-gradient(135deg,#6c5ce7,#a29bfe);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:0}
+#gate .g-sub{color:#6c6c7e;margin:0.25rem 0 1.5rem;font-size:0.85rem}
+#gate .g-input{width:280px;max-width:80vw;padding:0.8rem 1rem;border-radius:12px;border:1px solid #2a2a3a;background:#1a1a2a;color:#e0d8d0;font:inherit;font-size:1rem;text-align:center;outline:none;transition:0.2s}
+#gate .g-input:focus{border-color:#6c5ce7}
+#gate .g-err{color:#e57373;font-size:0.85rem;margin:0.5rem 0;display:none}
+#gate .g-btn{margin-top:1rem;padding:0.8rem 2.5rem;border:none;border-radius:12px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff;font:inherit;font-size:1rem;font-weight:700;cursor:pointer;transition:0.2s}
+#gate .g-btn:hover{opacity:0.9}
+#gate .g-btn:disabled{opacity:0.5;cursor:not-allowed}
+
+/* ─── App Shell ─── */
+.app{display:none}
+body.authed .app{display:block}
+body.authed #gate{display:none!important}
+
+.top-bar{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;background:rgba(10,10,15,0.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid #1a1a2a;
+}
+.top-bar .logo{font-weight:700;font-size:1rem;background:linear-gradient(135deg,#6c5ce7,#a29bfe);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.top-bar .level-badge{
+  padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:600;
+  background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff;
+}
+.top-bar .score-dot{font-size:0.75rem;color:#6c6c7e}
+
+/* ─── Progress bar ─── */
+.progress-track{
+  position:fixed;top:48px;left:0;right:0;height:3px;background:#1a1a2a;z-index:100;
+}
+.progress-fill{height:100%;background:linear-gradient(90deg,#6c5ce7,#a29bfe);transition:width 0.5s ease;width:0%}
+
+/* ─── Main Content ─── */
+.main{padding:80px 16px 40px;max-width:560px;margin:0 auto}
+
+/* ─── Welcome Screen ─── */
+.screen{display:none}
+.screen.active{display:block;animation:fadeIn 0.4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.welcome{text-align:center;padding-top:40px}
+.welcome .hero-icon{font-size:4rem;margin-bottom:1rem}
+.welcome h1{font-size:clamp(1.6rem,5vw,2.2rem);font-weight:800;margin-bottom:0.5rem}
+.welcome h1 span{background:linear-gradient(135deg,#6c5ce7,#a29bfe);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.welcome p{color:#8a8a9e;font-size:0.9rem;max-width:380px;margin:0 auto 1.5rem;line-height:1.7}
+.welcome .features{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:2rem}
+.welcome .features span{
+  padding:6px 14px;border-radius:20px;font-size:0.75rem;font-weight:500;
+  background:#1a1a2a;color:#a29bfe;border:1px solid #2a2a3a;
+}
+.btn-primary{
+  display:inline-flex;align-items:center;gap:8px;padding:14px 32px;
+  border:none;border-radius:14px;font:inherit;font-size:1rem;font-weight:700;
+  background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff;cursor:pointer;
+  transition:0.2s;text-decoration:none;
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(108,92,231,0.3)}
+.btn-secondary{
+  display:inline-flex;align-items:center;gap:8px;padding:12px 24px;
+  border:1px solid #2a2a3a;border-radius:12px;font:inherit;font-size:0.9rem;font-weight:500;
+  background:#1a1a2a;color:#a29bfe;cursor:pointer;transition:0.2s;
+}
+.btn-secondary:hover{background:#2a2a3a}
+
+/* ─── Question Screen ─── */
+.quest-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:1rem;padding:0 4px;
+}
+.quest-header .q-num{font-size:0.75rem;font-weight:600;color:#6c6c7e}
+.quest-header .q-level{
+  font-size:0.7rem;font-weight:600;padding:3px 10px;border-radius:12px;
+  background:rgba(108,92,231,0.15);color:#a29bfe;
+}
+.quest-category{
+  font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;
+  color:#6c6c7e;margin-bottom:0.3rem;
+}
+.quest-text{
+  font-size:clamp(1rem,3.5vw,1.15rem);font-weight:500;line-height:1.7;
+  margin-bottom:1.5rem;color:#e8e0d8;
+}
+.quest-text .reading-passage{
+  background:#12121a;border:1px solid #1a1a2a;border-radius:12px;
+  padding:16px;margin-bottom:16px;font-size:0.85rem;line-height:1.7;color:#b8b0c0;
+}
+.options{display:flex;flex-direction:column;gap:10px}
+.option{
+  display:flex;align-items:center;gap:12px;width:100%;
+  padding:14px 16px;border-radius:12px;border:1px solid #1a1a2a;
+  background:#12121a;color:#d0c8d0;font:inherit;font-size:0.95rem;
+  cursor:pointer;transition:0.2s;text-align:left;
+}
+.option:hover{border-color:#2a2a3a;background:#1a1a2a}
+.option .o-letter{
+  width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:0.8rem;font-weight:600;background:#1a1a2a;color:#6c6c7e;flex-shrink:0;
+}
+.option.correct{border-color:#5caa74;background:rgba(92,170,116,0.1)}
+.option.correct .o-letter{background:#5caa74;color:#fff}
+.option.wrong{border-color:#e57373;background:rgba(229,115,115,0.1)}
+.option.wrong .o-letter{background:#e57373;color:#fff}
+.option.selected{border-color:#6c5ce7;background:rgba(108,92,231,0.08)}
+.option.selected .o-letter{background:#6c5ce7;color:#fff}
+.option:disabled{cursor:default;opacity:0.7}
+.opt-text{flex:1}
+
+/* ─── Feedback after answer ─── */
+.feedback{
+  margin-top:16px;padding:14px 16px;border-radius:12px;display:none;
+  animation:fadeIn 0.3s ease;font-size:0.9rem;line-height:1.6;
+}
+.feedback.correct{display:block;background:rgba(92,170,116,0.08);border:1px solid rgba(92,170,116,0.2);color:#9deab4}
+.feedback.wrong{display:block;background:rgba(229,115,115,0.08);border:1px solid rgba(229,115,115,0.2);color:#e57373}
+.feedback .fb-title{font-weight:600;margin-bottom:4px}
+.feedback .fb-detail{color:#b8b0c0;font-size:0.85rem}
+
+.next-btn{
+  margin-top:16px;width:100%;padding:14px;border:none;border-radius:12px;
+  font:inherit;font-size:1rem;font-weight:700;cursor:pointer;
+  background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff;
+  transition:0.2s;display:none;
+}
+.next-btn:hover{opacity:0.9}
+
+/* ─── Level-up animation ─── */
+.level-up-overlay{
+  position:fixed;inset:0;z-index:200;
+  display:none;align-items:center;justify-content:center;flex-direction:column;
+  background:rgba(10,10,15,0.92);backdrop-filter:blur(8px);
+}
+.level-up-overlay.show{display:flex;animation:fadeIn 0.3s ease}
+.level-up-icon{font-size:4rem;margin-bottom:1rem;animation:bounce 0.6s ease}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+.level-up-text{font-size:1.5rem;font-weight:800;background:linear-gradient(135deg,#6c5ce7,#a29bfe);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.level-up-label{color:#8a8a9e;font-size:0.9rem;margin-top:4px}
+.level-up-btn{margin-top:20px;padding:12px 28px;border:none;border-radius:12px;font:inherit;font-weight:700;background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff;cursor:pointer}
+
+/* ─── Essay Screen ─── */
+.essay-section{margin-top:16px}
+.essay-section h3{font-size:1.1rem;font-weight:600;margin-bottom:8px}
+.essay-section .prompt{
+  background:#12121a;border:1px solid #1a1a2a;border-radius:12px;
+  padding:14px 16px;margin-bottom:12px;font-size:0.9rem;line-height:1.6;color:#b8b0c0;
+}
+.essay-section textarea{
+  width:100%;min-height:120px;padding:14px;border-radius:12px;
+  border:1px solid #1a1a2a;background:#12121a;color:#e0d8d0;
+  font:inherit;font-size:0.9rem;resize:vertical;outline:none;transition:0.2s;
+}
+.essay-section textarea:focus{border-color:#6c5ce7}
+.essay-section .essay-actions{display:flex;gap:10px;margin-top:10px}
+.essay-section .essay-actions button{flex:1;padding:10px;border-radius:10px;font:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;transition:0.2s}
+
+/* ─── Result Screen ─── */
+.result{padding-top:20px}
+.result .result-header{margin-bottom:1.5rem}
+.result .result-header h2{font-size:1.5rem;font-weight:800;margin-bottom:4px}
+.result .result-header .est-level{
+  display:inline-block;padding:8px 20px;border-radius:14px;
+  font-size:1.2rem;font-weight:800;margin:8px 0;
+  background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff;
+}
+.result .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.5rem}
+.result .stat-card{
+  background:#12121a;border:1px solid #1a1a2a;border-radius:12px;
+  padding:14px;text-align:center;
+}
+.result .stat-card .num{font-size:1.4rem;font-weight:700;color:#a29bfe}
+.result .stat-card .label{font-size:0.7rem;color:#6c6c7e;margin-top:2px;text-transform:uppercase}
+.result .result-actions{display:flex;flex-direction:column;gap:10px}
+.result .result-actions button, .result .result-actions a{
+  width:100%;padding:14px;border-radius:12px;text-align:center;
+  font:inherit;font-size:0.9rem;font-weight:600;cursor:pointer;transition:0.2s;border:none;text-decoration:none;
+}
+
+/* ─── JSON Prompt Output ─── */
+.prompt-output{
+  background:#0a0a0f;border:1px solid #1a1a2a;border-radius:12px;
+  padding:16px;margin:16px 0;max-height:300px;overflow:auto;font-family:monospace;
+  font-size:0.75rem;line-height:1.5;color:#b8b0c0;direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-all;
+}
+
+/* ─── CEFR visual ladder ─── */
+.cefr-ladder{display:flex;justify-content:center;gap:6px;margin:1.5rem 0;padding:0 8px}
+.cefr-rung{flex:1;max-width:52px;text-align:center;padding:6px 0;border-radius:8px;font-size:0.65rem;font-weight:700;background:#1a1a2a;color:#4a4a5a;transition:0.3s}
+.cefr-rung.achieved{background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff}
+.cefr-rung.current{background:linear-gradient(135deg,#5caa74,#7cca94);color:#fff;box-shadow:0 0 20px rgba(92,170,116,0.3);transform:scale(1.1)}
+.cefr-rung.tried{background:#2a1a3a;color:#a29bfe;border:1px solid rgba(108,92,231,0.3)}
+
+/* ─── Toast ─── */
+.toast{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:150;
+  padding:10px 20px;border-radius:12px;font-size:0.85rem;font-weight:500;
+  background:#1a1a2a;color:#e0d8d0;border:1px solid #2a2a3a;
+  box-shadow:0 8px 30px rgba(0,0,0,0.3);display:none;white-space:nowrap;
+}
+
+/* ─── Responsive ─── */
+@media(max-width:480px){
+  .main{padding:76px 12px 30px}
+  .welcome .features span{font-size:0.7rem;padding:4px 10px}
+  .option{padding:12px 14px;font-size:0.9rem}
+  .stat-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .result .stat-card{padding:10px}
+  .prompt-output{font-size:0.65rem;max-height:200px}
+}
+@media(min-width:768px){
+  .main{padding:80px 24px 40px}
+  .option{padding:16px 20px}
+}
+
+/* ─── Reduced motion ─── */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important}
+}
+
+/* ─── Print ─── */
+@media print{
+  .top-bar,.progress-track,#gate,.level-up-overlay{display:none!important}
+  .app{display:block!important}body.authed .app{display:block!important}
+  .main{padding:0;max-width:100%}.screen{display:block!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ─── Gate ─── -->
+<div id="gate">
+  <div class="g-icon">🔐</div>
+  <div class="g-title">LingoQuest</div>
+  <div class="g-sub">Adaptive English Level Test</div>
+  <input type="password" class="g-input" id="gp" placeholder="Password" autocomplete="off">
+  <div class="g-err" id="gerr">Wrong password</div>
+  <button class="g-btn" id="gbtn">Enter</button>
+</div>
+
+<!-- ─── App ─── -->
+<div class="app">
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="logo">✦ LingoQuest</div>
+    <div><span class="score-dot" id="topScore">0 / 0</span></div>
+    <div><span class="level-badge" id="topLevel">A2</span></div>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="main">
+
+    <!-- ═══ Welcome ═══ -->
+    <div class="screen active" id="screen-welcome">
+      <div class="welcome">
+        <div class="hero-icon">🌍</div>
+        <h1>Find Your <span>English Level</span></h1>
+        <p>An adaptive test that finds your real CEFR level — from A1 to C2. Answer ~25 smart questions, write a short essay, and get an AI-ready assessment.</p>
+        <div class="features">
+          <span>🧠 Adaptive</span>
+          <span>⚡ ~15 min</span>
+          <span>📊 CEFR Score</span>
+          <span>✍️ Optional Essay</span>
+        </div>
+        <button class="btn-primary" onclick="startTest()">Start Test →</button>
+      </div>
+    </div>
+
+    <!-- ═══ Question ═══ -->
+    <div class="screen" id="screen-question">
+      <div class="quest-header">
+        <span class="q-num" id="qNum">1 / 25</span>
+        <span class="q-level" id="qLevel">A2</span>
+      </div>
+      <div class="quest-category" id="qCategory">Grammar</div>
+      <div class="quest-text" id="qText">Loading...</div>
+      <div class="options" id="qOptions"></div>
+      <div class="feedback" id="feedback">
+        <div class="fb-title" id="fbTitle"></div>
+        <div class="fb-detail" id="fbDetail"></div>
+      </div>
+      <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Continue →</button>
+    </div>
+
+    <!-- ═══ Level Up ═══ -->
+    <div class="level-up-overlay" id="levelUp">
+      <div class="level-up-icon">🎉</div>
+      <div class="level-up-text" id="luTitle">Level Up!</div>
+      <div class="level-up-label" id="luLabel">You reached B1</div>
+      <button class="level-up-btn" onclick="dismissLevelUp()">Continue</button>
+    </div>
+
+    <!-- ═══ Essay ═══ -->
+    <div class="screen" id="screen-essay">
+      <div style="text-align:center;margin-bottom:1.5rem">
+        <div style="font-size:2rem;margin-bottom:0.5rem">✍️</div>
+        <h2 style="font-size:1.3rem;font-weight:700">Quick Writing Check</h2>
+        <p style="color:#8a8a9e;font-size:0.85rem;margin-top:4px">Optional — skip if you prefer</p>
+      </div>
+      <div class="essay-section" id="essaySection"></div>
+    </div>
+
+    <!-- ═══ Result ═══ -->
+    <div class="screen" id="screen-result">
+      <div class="result">
+        <div class="result-header">
+          <h2>📊 Your Results</h2>
+          <div class="cefr-ladder" id="cefrLadder"></div>
+          <div style="text-align:center;margin:1rem 0">
+            <div class="est-level" id="resultLevel">B1</div>
+            <p style="color:#8a8a9e;font-size:0.85rem;margin-top:6px">Estimated CEFR Level</p>
+          </div>
+        </div>
+        <div class="stat-grid" id="statGrid">
+          <div class="stat-card"><div class="num" id="sCorrect">0</div><div class="label">Correct</div></div>
+          <div class="stat-card"><div class="num" id="sTotal">0</div><div class="label">Questions</div></div>
+          <div class="stat-card"><div class="num" id="sAccuracy">0%</div><div class="label">Accuracy</div></div>
+          <div class="stat-card"><div class="num" id="sTime">0s</div><div class="label">Avg Time</div></div>
+        </div>
+
+        <h3 style="font-size:0.85rem;font-weight:600;color:#6c6c7e;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">
+          🤖 AI Assessment Prompt
+        </h3>
+        <p style="font-size:0.75rem;color:#6c6c7e;margin-bottom:8px">
+          Copy this JSON and send it to any AI to get a detailed level assessment.
+        </p>
+        <div class="prompt-output" id="promptOutput"></div>
+        <div class="result-actions">
+          <button class="btn-primary" onclick="copyPrompt()">📋 Copy Prompt</button>
+          <button class="btn-secondary" onclick="downloadJSON()">⬇️ Download JSON</button>
+          <button class="btn-secondary" onclick="resetTest()">🔄 Retake Test</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════
+   LingoQuest — Engine
+   ═══════════════════════════════════ */
+
+// ─── Auth ───
+(function(){
+  var hash = "d004880f52f86f9d6116bcf63096431ca6e2cb98b8e8a4d936e3236c46394d94";
+  var key = "lq_auth";
+  if(sessionStorage.getItem(key)){document.body.classList.add("authed");return}
+  var btn=document.getElementById("gbtn"),inp=document.getElementById("gp"),err=document.getElementById("gerr");
+  async function check(){
+    err.style.display="none";btn.disabled=true;btn.textContent="Checking…";
+    var b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(inp.value));
+    var h=Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("");
+    if(h===hash){sessionStorage.setItem(key,"1");document.body.classList.add("authed")}
+    else{err.style.display="block";btn.disabled=false;btn.textContent="Enter";inp.value="";inp.focus()}
+  }
+  btn.onclick=check;inp.onkeydown=function(e){if(e.key==="Enter")check()};inp.focus();
+})();
+
+// ─── CEFR Labels ───
+const CEFR = {0:"A1",1:"A2",2:"B1",3:"B2",4:"C1",5:"C2"};
+const CEFR_FULL = {0:"Beginner (A1)",1:"Elementary (A2)",2:"Intermediate (B1)",3:"Upper-Intermediate (B2)",4:"Advanced (C1)",5:"Mastery (C2)"};
+
+// ─── Question Bank ───
+const QUESTIONS = [
+  // ═══ A1 ═══
+  {id:"a1-1",level:0,type:"Vocabulary",cat:"Core",
+   q:"Which word means a place where you live?",
+   opts:["Car","House","Table","Apple"],a:1},
+  {id:"a1-2",level:0,type:"Grammar",cat:"Verb To Be",
+   q:"She ___ a teacher.",
+   opts:["am","is","are","be"],a:1},
+  {id:"a1-3",level:0,type:"Vocabulary",cat:"Daily Life",
+   q:"What do you do in the morning?",
+   opts:["Sleep all day","Eat breakfast","Drive a car","Read a book"],a:1},
+  {id:"a1-4",level:0,type:"Grammar",cat:"Present Simple",
+   q:"They ___ coffee every morning.",
+   opts:["drink","drinks","drinking","drank"],a:0},
+  {id:"a1-5",level:0,type:"Vocabulary",cat:"Numbers",
+   q:"What comes after 'first'?",
+   opts:["One","Second","Once","Firstly"],a:1},
+  // ═══ A2 ═══
+  {id:"a2-1",level:1,type:"Grammar",cat:"Past Simple",
+   q:"Yesterday, I ___ to the park.",
+   opts:["go","goes","went","gone"],a:2},
+  {id:"a2-2",level:1,type:"Vocabulary",cat:"Travel",
+   q:"A 'passport' is something you need when you ___.",
+   opts:["go shopping","travel abroad","cook dinner","watch TV"],a:1},
+  {id:"a2-3",level:1,type:"Grammar",cat:"Comparatives",
+   q:"This book is ___ than that one.",
+   opts:["cheap","cheaper","cheapest","more cheap"],a:1},
+  {id:"a2-4",level:1,type:"Vocabulary",cat:"Feelings",
+   q:"If you are 'excited', you feel ___.",
+   ops:["Tired and sleepy","Happy and eager","Angry and upset","Bored and uninterested"],
+   // Fallback: use opts:
+   opts:["Tired and sleepy","Happy and eager","Angry and upset","Bored and uninterested"],a:1},
+  {id:"a2-5",level:1,type:"Grammar",cat:"Prepositions",
+   q:"The cat is ___ the table.",
+   opts:["on","at","in","to"],a:0},
+  // ═══ B1 ═══
+  {id:"b1-1",level:2,type:"Grammar",cat:"Present Perfect",
+   q:"I ___ never ___ to Japan.",
+   opts:["have…be","have…been","has…been","did…go"],a:1},
+  {id:"b1-2",level:2,type:"Vocabulary",cat:"Work",
+   q:"If you get a 'promotion', you ___.",
+   opts:["lose your job","move to a higher position","work fewer hours","get paid less"],a:1},
+  {id:"b1-3",level:2,type:"Grammar",cat:"Conditionals",
+   q:"If it rains, I ___ stay home.",
+   opts:["will","would","am","have"],a:0},
+  {id:"b1-4",level:2,type:"Vocabulary",cat:"Relationships",
+   q:"A 'colleague' is someone you ___.",
+   opts:["live with","work with","study with","travel with"],a:1},
+  {id:"b1-5",level:2,type:"Grammar",cat:"Modals",
+   q:"You ___ wear a seatbelt while driving.",
+   opts:["must","can","might","could"],a:0},
+  {id:"b1-6",level:2,type:"Reading",cat:"Comprehension",
+   q:"Read: 'Sarah had been saving for months. Finally, she booked her flight to Barcelona. She was nervous but excited.' Why did Sarah feel nervous?",
+   opts:["She lost her money","She was traveling alone","She had never been to Barcelona","The text doesn't say"],a:3},
+  // ═══ B2 ═══
+  {id:"b2-1",level:3,type:"Grammar",cat:"Passive Voice",
+   q:"The letter ___ yesterday.",
+   opts:["sent","was sent","has sent","is sending"],a:1},
+  {id:"b2-2",level:3,type:"Vocabulary",cat:"Collocations",
+   q:"Which word goes with 'make'?",
+   opts:["a decision","a photo","a nap","a run"],a:0},
+  {id:"b2-3",level:3,type:"Grammar",cat:"Relative Clauses",
+   q:"The woman ___ lives next door is a doctor.",
+   opts:["which","who","whom","whose"],a:1},
+  {id:"b2-4",level:3,type:"Vocabulary",cat:"Phrasal Verbs",
+   q:"'Give up' means to ___.",
+   opts:["donate","stop trying","distribute","surrender something"],a:1},
+  {id:"b2-5",level:3,type:"Reading",cat:"Comprehension",
+   q:"Passage: 'Despite the initial setbacks, the team persevered and ultimately delivered an exceptional product. Their dedication was commendable.' What does 'persevered' mean?",
+   opts:["Gave up easily","Continued despite difficulties","Started late","Changed direction"],a:1},
+  // ═══ C1 ═══
+  {id:"c1-1",level:4,type:"Grammar",cat:"Inversion",
+   q:"___ had she arrived when the phone rang.",
+   opts:["No sooner","Not only","Hardly","Never"],a:2},
+  {id:"c1-2",level:4,type:"Vocabulary",cat:"Nuance",
+   q:"The word 'ubiquitous' means ___.",
+   opts:["extremely rare","found everywhere","very expensive","completely unique"],a:1},
+  {id:"c1-3",level:4,type:"Grammar",cat:"Advanced Conditionals",
+   q:"Had I known earlier, I ___ things differently.",
+   opts:["would do","would have done","will do","did"],a:1},
+  {id:"c1-4",level:4,type:"Vocabulary",cat:"Academic",
+   q:"The researcher's findings were 'inconclusive'. This means the results ___.",
+   opts:["were very clear","did not lead to a definite conclusion","were widely accepted","contradicted the hypothesis"],a:1},
+  // ═══ C2 ═══
+  {id:"c2-1",level:5,type:"Vocabulary",cat:"Idioms",
+   q:"'To pull out all the stops' means to ___.",
+   opts:["remove obstacles","make every possible effort","stop completely","cancel plans"],a:1},
+  {id:"c2-2",level:5,type:"Grammar",cat:"Advanced Structures",
+   q:"Were it not for her assistance, the project ___.",
+   opts:["would fail","would have failed","failed","will fail"],a:1},
+  {id:"c2-3",level:5,type:"Vocabulary",cat:"Precision",
+   q:"Choose the most precise word: 'His remarks were ___, causing widespread offense.'",
+   opts:["inappropriate","tactless","gratuitous","imprudent"],a:2},
+];
+
+// ─── State ───
+let state = {
+  currentLevel: 1,       // start at A2
+  levelCorrect: {},      // {level: {correct, total, time}}
+  currentQ: 0,           // index in selectedQuestions
+  selectedQ: [],         // ordered question IDs
+  responses: [],         // {qId, level, correct, time, answer}
+  essays: [],            // [{prompt, text}]
+  qStartTime: 0,
+  started: false,
+  totalQuestions: 0,
+  levelTransitions: [],  // [{from, to, reason}]
+  consecutiveCorrect: 0,
+};
+
+const ESSAY_PROMPTS = [
+  "Describe a significant challenge you have faced and how you overcame it. (150-250 words)",
+  "What are the advantages and disadvantages of social media? Share your opinion. (150-250 words)",
+];
+
+// ─── Adaptive Logic ───
+function selectQuestions() {
+  // Strategy: ~25 questions, weighted toward the user's likely level
+  // We'll adapt in real-time but pre-select a balanced pool
+  let byLevel = {};
+  QUESTIONS.forEach(q => {
+    if(!byLevel[q.level]) byLevel[q.level] = [];
+    byLevel[q.level].push(q.id);
+  });
+  
+  let selected = [];
+  // Always include some from each level near the starting point
+  let startLevel = state.currentLevel;
+  
+  // Flatten: pick 4-5 from each level, more from the target zone
+  for(let l = 0; l <= 5; l++) {
+    let pool = byLevel[l] || [];
+    let count = l === startLevel ? 6 : (Math.abs(l - startLevel) <= 1 ? 4 : 3);
+    let shuffled = [...pool].sort(() => Math.random() - 0.5);
+    selected.push(...shuffled.slice(0, count));
+  }
+  
+  // Shuffle and limit to ~25
+  selected = selected.sort(() => Math.random() - 0.5).slice(0, 25);
+  // Ensure we have questions from the starting level
+  if(!selected.some(id => QUESTIONS.find(q => q.id === id).level === startLevel)) {
+    let pool = byLevel[startLevel] || [];
+    if(pool.length) selected.unshift(pool[0]);
+  }
+  
+  state.selectedQ = selected;
+  state.totalQuestions = selected.length;
+}
+
+function getLevelForQuestion(level) {
+  let stats = state.levelCorrect[level] || {correct:0, total:0, time:0};
+  let accuracy = stats.total > 0 ? stats.correct / stats.total : 0;
+  
+  // After 3+ questions in a level, consider adjusting
+  if(stats.total >= 3) {
+    if(accuracy >= 0.75 && state.currentLevel < 5) {
+      return state.currentLevel + 1; // level up
+    } else if(accuracy <= 0.3 && state.currentLevel > 0) {
+      return state.currentLevel - 1; // level down
+    }
+  }
+  // Check consecutive correct for quick level-up
+  if(state.consecutiveCorrect >= 3 && state.currentLevel < 5) {
+    return state.currentLevel + 1;
+  }
+  return state.currentLevel;
+}
+
+function getNextQuestion() {
+  if(state.currentQ >= state.selectedQ.length) {
+    // Generate more or go to essay
+    return null;
+  }
+  let qId = state.selectedQ[state.currentQ];
+  return QUESTIONS.find(q => q.id === qId);
+}
+
+// ─── UI ───
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+}
+
+function startTest() {
+  state.started = true;
+  state.currentLevel = 1;
+  state.levelCorrect = {};
+  state.responses = [];
+  state.essays = [];
+  state.currentQ = 0;
+  state.consecutiveCorrect = 0;
+  state.levelTransitions = [];
+  selectQuestions();
+  showScreen('question');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  let data = getNextQuestion();
+  if(!data) { finishQuestions(); return; }
+  
+  // Adaptive: check if we should adjust level
+  let newLevel = getLevelForQuestion(data.level);
+  if(newLevel !== state.currentLevel) {
+    state.levelTransitions.push({from:state.currentLevel, to:newLevel, reason:accuracyBased()});
+    state.currentLevel = newLevel;
+    showLevelUp(CEFR[newLevel]);
+    return;
+  }
+  
+  document.getElementById('qNum').textContent = `${state.currentQ + 1} / ${state.totalQuestions}`;
+  document.getElementById('qLevel').textContent = CEFR[data.level] + ' ' + CAT_NAMES[data.type] || data.type;
+  document.getElementById('qCategory').textContent = data.cat || data.type;
+  
+  let txt = data.q;
+  document.getElementById('qText').textContent = txt;
+  
+  let optsEl = document.getElementById('qOptions');
+  optsEl.innerHTML = '';
+  let letters = ['A','B','C','D'];
+  data.opts.forEach((opt, i) => {
+    let el = document.createElement('button');
+    el.className = 'option';
+    el.innerHTML = `<span class="o-letter">${letters[i]}</span><span class="opt-text">${opt}</span>`;
+    el.onclick = () => selectAnswer(i, data);
+    optsEl.appendChild(el);
+  });
+  
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('feedback').style.display = 'none';
+  document.getElementById('nextBtn').style.display = 'none';
+  
+  state.qStartTime = Date.now();
+  updateProgress();
+  updateTopBar(data.level);
+}
+
+let CAT_NAMES = {Grammar:'Grammar',Vocabulary:'Vocab',Reading:'Reading'};
+
+function selectAnswer(idx, data) {
+  let opts = document.querySelectorAll('.option');
+  opts.forEach(o => o.disabled = true);
+  
+  let time = (Date.now() - state.qStartTime) / 1000;
+  let correct = idx === data.a;
+  
+  // Mark selected
+  opts.forEach((o, i) => {
+    if(i === data.a) o.classList.add('correct');
+    if(i === idx && !correct) o.classList.add('wrong');
+    if(i === idx) o.classList.add('selected');
+  });
+  
+  // Track
+  if(!state.levelCorrect[data.level]) state.levelCorrect[data.level] = {correct:0, total:0, time:0};
+  if(correct) {
+    state.levelCorrect[data.level].correct++;
+    state.consecutiveCorrect++;
+  } else {
+    state.consecutiveCorrect = 0;
+  }
+  state.levelCorrect[data.level].total++;
+  state.levelCorrect[data.level].time += time;
+  
+  state.responses.push({
+    questionId: data.id,
+    level: data.level,
+    type: data.type,
+    correct: correct,
+    time: Math.round(time * 10) / 10,
+    userAnswer: idx,
+    correctAnswer: data.a,
+    levelLabel: CEFR[data.level]
+  });
+  
+  // Feedback
+  let fb = document.getElementById('feedback');
+  if(correct) {
+    fb.className = 'feedback correct';
+    document.getElementById('fbTitle').textContent = '✓ Correct!';
+    document.getElementById('fbDetail').textContent = 'Nice work!';
+  } else {
+    fb.className = 'feedback wrong';
+    document.getElementById('fbTitle').textContent = '✗ Not quite';
+    document.getElementById('fbDetail').textContent = `The correct answer was: ${data.opts[data.a]}`;
+  }
+  fb.style.display = 'block';
+  
+  document.getElementById('nextBtn').style.display = 'block';
+  updateTopBar(data.level);
+}
+
+function nextQuestion() {
+  state.currentQ++;
+  renderQuestion();
+}
+
+function showLevelUp(newLevel) {
+  document.getElementById('luTitle').textContent = '🎉 Level Up!';
+  document.getElementById('luLabel').textContent = `You reached ${CEFR_FULL[state.currentLevel]}`;
+  document.getElementById('levelUp').classList.add('show');
+}
+
+function dismissLevelUp() {
+  document.getElementById('levelUp').classList.remove('show');
+  renderQuestion();
+}
+
+function accuracyBased() {
+  return 'adaptive adjustment';
+}
+
+function finishQuestions() {
+  showScreen('essay');
+  renderEssays();
+}
+
+function renderEssays() {
+  let el = document.getElementById('essaySection');
+  el.innerHTML = '';
+  
+  ESSAY_PROMPTS.forEach((prompt, i) => {
+    let div = document.createElement('div');
+    div.innerHTML = `
+      <h3>Essay ${i + 1}</h3>
+      <div class="prompt">${prompt}</div>
+      <textarea id="essay-${i}" placeholder="Write your essay here... (or click Skip below)"></textarea>
+      <div class="essay-actions">
+        <button class="btn-primary" onclick="saveEssay(${i})">✓ Save & Continue</button>
+        <button class="btn-secondary" onclick="skipEssay(${i})">Skip →</button>
+      </div>
+    `;
+    el.appendChild(div);
+  });
+  
+  // If both essays are skipped already, show result button
+  let resultBtn = document.createElement('div');
+  resultBtn.style.marginTop = '16px';
+  resultBtn.innerHTML = `<button class="btn-primary" style="width:100%" onclick="showResult()">📊 See My Level →</button>`;
+  el.appendChild(resultBtn);
+}
+
+let essaySkipped = [false, false];
+
+function saveEssay(i) {
+  let val = document.getElementById('essay-' + i).value.trim();
+  if(!val) { skipEssay(i); return; }
+  state.essays.push({prompt: ESSAY_PROMPTS[i], text: val, skipped: false});
+  showToast('Essay ' + (i+1) + ' saved ✓');
+  // Disable textarea
+  document.getElementById('essay-' + i).disabled = true;
+}
+
+function skipEssay(i) {
+  essaySkipped[i] = true;
+  state.essays.push({prompt: ESSAY_PROMPTS[i], text: '', skipped: true});
+  showToast('Essay ' + (i+1) + ' skipped');
+  document.getElementById('essay-' + i).disabled = true;
+}
+
+function showResult() {
+  showScreen('result');
+  renderResult();
+}
+
+function renderResult() {
+  // Calculate stats
+  let total = state.responses.length;
+  let correct = state.responses.filter(r => r.correct).length;
+  let acc = total > 0 ? Math.round(correct / total * 100) : 0;
+  let avgTime = total > 0 ? (state.responses.reduce((s, r) => s + r.time, 0) / total) : 0;
+  
+  // Determine level
+  let levelScores = {};
+  state.responses.forEach(r => {
+    if(!levelScores[r.level]) levelScores[r.level] = {correct:0, total:0};
+    levelScores[r.level].total++;
+    if(r.correct) levelScores[r.level].correct++;
+  });
+  
+  let finalLevel = 1; // A2 default
+  let bestAcc = 0;
+  for(let l = 0; l <= 5; l++) {
+    if(levelScores[l] && levelScores[l].total >= 2) {
+      let acc = levelScores[l].correct / levelScores[l].total;
+      if(acc >= 0.6 && l > finalLevel) finalLevel = l;
+    }
+  }
+  // If all levels below are solid, push up
+  for(let l = finalLevel; l >= 1; l--) {
+    if(levelScores[l-1] && levelScores[l-1].total >= 2 && levelScores[l-1].correct / levelScores[l-1].total < 0.5) {
+      finalLevel = l - 1;
+    }
+  }
+  
+  state.finalLevel = finalLevel;
+  
+  // Stats UI
+  document.getElementById('sCorrect').textContent = correct;
+  document.getElementById('sTotal').textContent = total;
+  document.getElementById('sAccuracy').textContent = acc + '%';
+  document.getElementById('sTime').textContent = avgTime.toFixed(1) + 's';
+  document.getElementById('resultLevel').textContent = CEFR[finalLevel];
+  
+  // CEFR Ladder
+  let ladder = document.getElementById('cefrLadder');
+  ladder.innerHTML = '';
+  for(let l = 0; l <= 5; l++) {
+    let el = document.createElement('div');
+    el.className = 'cefr-rung';
+    if(l < finalLevel) el.classList.add('achieved');
+    else if(l === finalLevel) el.classList.add('current');
+    else if(levelScores[l] && levelScores[l].total > 0) el.classList.add('tried');
+    el.textContent = CEFR[l];
+    ladder.appendChild(el);
+  }
+  
+  // Build JSON prompt
+  let prompt = buildPrompt(finalLevel, correct, total, acc, avgTime);
+  document.getElementById('promptOutput').textContent = JSON.stringify(prompt, null, 2);
+  
+  updateProgress(100);
+}
+
+function buildPrompt(level, correct, total, acc, avgTime) {
+  let analysis = {
+    assessment_type: "adaptive_english_level_test",
+    version: "1.0",
+    
+    system_prompt: `You are an expert English language assessor trained on CEFR standards. Analyze the following test results and provide:
+1. The user's estimated CEFR level (A1-C2) with confidence level (HIGH/MEDIUM/LOW)
+2. A breakdown by skill area (Grammar, Vocabulary, Reading)
+3. Specific strengths and weaknesses observed
+4. Personalized recommendations for improvement
+5. If essays were provided, assess them for: Task Response, Coherence & Cohesion, Lexical Resource, Grammatical Range & Accuracy
+
+Base your assessment on the evidence provided. Be specific and constructive.`,
+
+    estimated_level: CEFR[level],
+    cefr_code: level,
+    confidence: total >= 20 ? "HIGH" : (total >= 15 ? "MEDIUM" : "LOW"),
+    
+    stats: {
+      total_questions: total,
+      correct_answers: correct,
+      accuracy_percent: acc,
+      average_response_time_seconds: avgTime,
+    },
+    
+    per_level_breakdown: (() => {
+      let levels = {};
+      for(let l = 0; l <= 5; l++) {
+        let r = state.responses.filter(x => x.level === l);
+        if(r.length > 0) {
+          levels[CEFR[l]] = {
+            questions: r.length,
+            correct: r.filter(x => x.correct).length,
+            accuracy: Math.round(r.filter(x => x.correct).length / r.length * 100) + '%',
+          };
+        }
+      }
+      return levels;
+    })(),
+    
+    all_questions: state.responses.map(r => ({
+      level: r.levelLabel,
+      type: r.type,
+      question_id: r.questionId,
+      correct: r.correct,
+      response_time_s: r.time,
+    })),
+    
+    essays: state.essays.filter(e => !e.skipped).map(e => ({
+      prompt: e.prompt,
+      text: e.text,
+    })),
+    
+    level_transitions: state.levelTransitions,
+    
+    assessment_request: "Based on this data, determine the user's CEFR English level with detailed justification.",
+  };
+  
+  return analysis;
+}
+
+function copyPrompt() {
+  let text = document.getElementById('promptOutput').textContent;
+  navigator.clipboard.writeText(text).then(() => showToast('📋 Copied to clipboard!')).catch(() => {
+    // Fallback
+    let ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    showToast('📋 Copied!');
+  });
+}
+
+function downloadJSON() {
+  let text = document.getElementById('promptOutput').textContent;
+  let blob = new Blob([text], {type: 'application/json'});
+  let a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'lingoquest-assessment.json';
+  a.click();
+  URL.revokeObjectURL(blob);
+}
+
+function resetTest() {
+  if(confirm('Reset all progress and start over?')) {
+    state = {
+      currentLevel: 1,
+      levelCorrect: {},
+      currentQ: 0,
+      selectedQ: [],
+      responses: [],
+      essays: [],
+      qStartTime: 0,
+      started: false,
+      totalQuestions: 0,
+      levelTransitions: [],
+      consecutiveCorrect: 0,
+    };
+    essaySkipped = [false, false];
+    document.getElementById('progressFill').style.width = '0%';
+    showScreen('welcome');
+  }
+}
+
+function updateProgress(pct) {
+  let val = pct !== undefined ? pct : (state.totalQuestions > 0 ? Math.round(state.currentQ / state.totalQuestions * 100) : 0);
+  document.getElementById('progressFill').style.width = val + '%';
+}
+
+function updateTopBar(level) {
+  let total = state.responses.length;
+  let correct = state.responses.filter(r => r.correct).length;
+  document.getElementById('topScore').textContent = `${correct} / ${total}`;
+  document.getElementById('topLevel').textContent = CEFR[level || state.currentLevel];
+}
+
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  t.style.animation = 'none';
+  setTimeout(() => t.style.display = 'none', 2500);
+}
+</script>
+</body>
+</html>
