@@ -95,6 +95,14 @@
           </span>
         </div>
         <button class="btn-primary" id="btnStart" type="button">Begin Assessment</button>
+        <div class="welcome-returning" id="welcomeReturning" style="display:none">
+          <div class="returning-badge">Welcome back! 👋</div>
+          <p class="returning-level">Your latest level: <strong id="returningLevel">—</strong></p>
+          <div class="returning-actions">
+            <button class="btn-secondary" id="btnViewHistory" type="button">📋 View History</button>
+            <button class="btn-secondary" id="btnSettings" type="button">⚙️ Settings</button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -154,6 +162,34 @@
           <button class="btn-primary" id="btnCopy" type="button">📋 Copy Prompt</button>
           <button class="btn-secondary" id="btnDownload" type="button">⬇️ Download JSON</button>
           <button class="btn-secondary" id="btnRestart" type="button">🔄 Retake Test</button>
+          <button class="btn-secondary" id="btnRetakeFresh" type="button">🆕 Fresh Test</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ History ═══ -->
+    <section class="screen" id="screen-history" aria-label="Test history">
+      <div class="history">
+        <div class="history-header">
+          <h2>📋 Test History</h2>
+          <button class="btn-back" id="btnBackHistory" type="button">← Back</button>
+        </div>
+        <div class="history-list" id="historyList"></div>
+        <div class="history-empty" id="historyEmpty"><p>No tests taken yet. Start your first assessment!</p></div>
+      </div>
+    </section>
+
+    <!-- ═══ Settings ═══ -->
+    <section class="screen" id="screen-settings" aria-label="Settings">
+      <div class="settings">
+        <div class="settings-header">
+          <h2>⚙️ Settings</h2>
+          <button class="btn-back" id="btnBackSettings" type="button">← Back</button>
+        </div>
+        <div class="settings-group">
+          <h3>Privacy</h3>
+          <p>All test data is stored locally on this device using IndexedDB. No data is ever sent to a server.</p>
+          <button class="btn-secondary btn-danger" id="btnClearData" type="button">🗑️ Clear All Data</button>
         </div>
       </div>
     </section>

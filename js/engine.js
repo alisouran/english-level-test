@@ -15,7 +15,7 @@ PRIOR.forEach((v, i) => PRIOR[i] = v / PRIOR_SUM);
 const MIN_QS = 8;
 const MAX_QS = 40;
 const THETA_SE = 0.4;
-const INITIAL = 0; // A2 starting level index
+export const INITIAL = 2; // B1 starting level index
 
 // 2PL IRF
 function pCorrect(theta, b) {
@@ -79,12 +79,12 @@ export function pickQuestion(QUESTIONS) {
   const used = state.adminIds;
   const theta = state.theta;
 
-  // First question: pick from middle difficulty
+  // First question: pick from middle difficulty, filter seen ids
   if (used.size === 0) {
-    const candidates = QUESTIONS.filter(q => Math.abs(getItemDifficulty(q.id) - ITEM_DIFFICULTY[INITIAL]) < 0.5);
+    const candidates = QUESTIONS.filter(q => Math.abs(q.b - ITEM_DIFFICULTY[INITIAL]) < 0.5 && !state.seenQuestionIds.has(q.id));
     return candidates.length > 0
       ? candidates[Math.floor(Math.random() * candidates.length)]
-      : QUESTIONS[0];
+      : QUESTIONS.find(q => !state.seenQuestionIds.has(q.id)) || QUESTIONS[0];
   }
 
   // Proven level range
@@ -92,15 +92,15 @@ export function pickQuestion(QUESTIONS) {
   const minD = ITEM_DIFFICULTY[Math.max(0, provenLevel - 1)];
   const maxD = ITEM_DIFFICULTY[Math.min(5, provenLevel + 1)];
 
-  // Candidates within proven level range, not used
+  // Candidates within proven level range, not used, not seen
   let candidates = QUESTIONS.filter(q => {
-    const d = getItemDifficulty(q.id);
-    return d >= minD && d <= maxD && !used.has(q.id);
+    const d = q.b;
+    return d >= minD && d <= maxD && !used.has(q.id) && !state.seenQuestionIds.has(q.id);
   });
 
   if (candidates.length === 0) {
-    // Fallback: any unused question
-    candidates = QUESTIONS.filter(q => !used.has(q.id));
+    // Fallback: any unused + unseen question
+    candidates = QUESTIONS.filter(q => !used.has(q.id) && !state.seenQuestionIds.has(q.id));
   }
 
   if (candidates.length === 0) return null;
@@ -109,7 +109,7 @@ export function pickQuestion(QUESTIONS) {
   let best = null;
   let bestFi = -1;
   for (const q of candidates) {
-    const d = getItemDifficulty(q.id);
+    const d = q.b;
     const fi = fisherInfo(theta, d);
     if (fi > bestFi) {
       bestFi = fi;
@@ -120,7 +120,7 @@ export function pickQuestion(QUESTIONS) {
   // Add small random noise to avoid always picking same diff
   if (candidates.length > 1) {
     const tie = candidates.filter(q => {
-      const d = getItemDifficulty(q.id);
+      const d = q.b;
       return Math.abs(fisherInfo(theta, d) - bestFi) < 0.01;
     });
     if (tie.length > 1) best = tie[Math.floor(Math.random() * tie.length)];

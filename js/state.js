@@ -9,8 +9,11 @@ export const state = {
   prevLevel: 0,
   currentQ: null,
   currentIdx: 0,
+  userId: "",             // set from db.js getUserId()
   adminIds: new Set(),
-  responses: [],          // {qId, correct, time, b}
+  seenQuestionIds: new Set(),  // persisted across sessions via db.js
+  resultId: "",           // UUID set when saving a result
+  responses: [],          // {qId, correct, time, b, id, questionText, options, selectedAnswer}
   essays: [],             // [{prompt, text, skipped}]
   startTime: 0,
   perQTime: 0,
@@ -18,6 +21,7 @@ export const state = {
   totalCorrect: 0,
   totalQuestions: 0,
   testStartTime: 0,
+  duration: 0,            // total test duration in milliseconds
 };
 
 export function resetState() {
@@ -28,6 +32,7 @@ export function resetState() {
   state.currentQ = null;
   state.currentIdx = 0;
   state.adminIds = new Set();
+  state.resultId = "";
   state.responses = [];
   state.essays = [];
   state.startTime = 0;
@@ -36,12 +41,14 @@ export function resetState() {
   state.totalCorrect = 0;
   state.totalQuestions = 0;
   state.testStartTime = 0;
+  state.duration = 0;
+  // userId and seenQuestionIds are deliberately preserved across test sessions
 }
 
-export function recordResponse(qId, correct, b, questionText, options, selectedAnswer) {
+export function recordResponse(qId, correct, b, questionText, options, selectedAnswer, id) {
   const now = Date.now();
   const timeTaken = state.lastQTime ? (now - state.lastQTime) / 1000 : 0;
-  state.responses.push({qId, correct, time: timeTaken, b, questionText, options, selectedAnswer});
+  state.responses.push({qId, id, correct, time: timeTaken, b, questionText, options, selectedAnswer});
   if (correct) state.totalCorrect++;
   state.totalQuestions++;
   state.perQTime = state.perQTime
