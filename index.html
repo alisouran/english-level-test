@@ -2257,12 +2257,23 @@ function levelFromTheta(t) {
 
 function planBatch() {
   let used = new Set(state.administeredIds);
-  let counts = {}; for (let l=0; l<6; l++) counts[l] = 0;
-  state.responses.forEach(r => counts[r.level]++);
+  let counts = {}; let corrects = {};
+  for (let l=0; l<6; l++) { counts[l]=0; corrects[l]=0; }
+  state.responses.forEach(r => { counts[r.level]++; if(r.correct) corrects[r.level]++; });
   
   let iret = eapEstimate(state.responses);
   state.theta = iret.theta; state.thetaSE = iret.se;
-  let target = levelFromTheta(state.theta);
+  let thetaLevel = levelFromTheta(state.theta);
+  
+  // Safe target: only levels where user has proven ability
+  // (≥2 questions with ≥50% accuracy)
+  let target = 0;
+  for (let l=0; l<6; l++) {
+    if (counts[l] >= 3 && corrects[l]/counts[l] >= 0.5) target = l;
+  }
+  // If nothing proven yet, start at A2
+  if (target === 0 && counts[0] < 3) target = 1;
+  target = Math.max(0, Math.min(5, target));
   
   let batch = [];
   function pick(lvl) {
@@ -2274,13 +2285,12 @@ function planBatch() {
   
   // 3 from target level
   for (let i=0; i<3 && batch.length<5; i++) { let q=pick(target); if(q) batch.push(q); }
-  // Fill with underrepresented levels
+  // Fill with underrepresented levels (lowest ones first)
   for (let l=0; l<6 && batch.length<5; l++) {
     if (counts[l] < MIN_PER_LEVEL) { let q=pick(l); if(q) batch.push(q); }
   }
   // Fill rest from target
   while (batch.length < 5) { let q=pick(target); if(!q) break; batch.push(q); }
-  // If still empty, pick anything
   while (batch.length < 5) {
     for (let l=0; l<6 && batch.length<5; l++) { let q=pick(l); if(q) batch.push(q); }
   }
