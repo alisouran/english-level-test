@@ -391,6 +391,73 @@ body.authed #gate{display:none!important}
 const CEFR = {0:"A1",1:"A2",2:"B1",3:"B2",4:"C1",5:"C2"};
 const CEFR_FULL = {0:"Beginner (A1)",1:"Elementary (A2)",2:"Intermediate (B1)",3:"Upper-Intermediate (B2)",4:"Advanced (C1)",5:"Mastery (C2)"};
 
+// ─── IRT Constants & Helpers ───
+const ITEM_DIFFICULTY = [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0];
+const THETA_PRIOR_MEAN = 0;
+const THETA_PRIOR_VAR = 2.0;
+const MIN_QUESTIONS = 20;
+const MAX_QUESTIONS = 30;
+const THETA_SE_STOP = 0.5;
+const REEVAL_INTERVAL = 5;
+
+function logistic(x) { return 1 / (1 + Math.exp(-x)); }
+
+function getTimeWeight(time) {
+  if (time < 5) return 1.0;
+  if (time < 15) return 0.7;
+  return 0.4;
+}
+
+function estimateIRT() {
+  let theta = THETA_PRIOR_MEAN;
+  for (let iter = 0; iter < 30; iter++) {
+    let firstDeriv = (THETA_PRIOR_MEAN - theta) / THETA_PRIOR_VAR;
+    let secondDeriv = -1 / THETA_PRIOR_VAR;
+    for (let r of state.responses) {
+      let b = ITEM_DIFFICULTY[r.level];
+      let w = getTimeWeight(r.time);
+      let p = logistic(theta - b);
+      firstDeriv += w * ((r.correct ? 1 : 0) - p);
+      secondDeriv -= w * p * (1 - p);
+    }
+    if (Math.abs(secondDeriv) < 1e-10) break;
+    let delta = firstDeriv / secondDeriv;
+    theta -= delta;
+    if (Math.abs(delta) < 1e-6) break;
+  }
+  let info = 1 / THETA_PRIOR_VAR;
+  for (let r of state.responses) {
+    let b = ITEM_DIFFICULTY[r.level];
+    let w = getTimeWeight(r.time);
+    let p = logistic(theta - b);
+    info += w * p * (1 - p);
+  }
+  return { theta, se: 1 / Math.sqrt(info) };
+}
+
+function levelFromTheta(theta) {
+  let closest = 0;
+  let minDist = Infinity;
+  for (let l = 0; l <= 5; l++) {
+    let d = Math.abs(theta - ITEM_DIFFICULTY[l]);
+    if (d < minDist) { minDist = d; closest = l; }
+  }
+  return closest;
+}
+
+function pickQuestion(targetLevel) {
+  for (let d = 0; d <= 5; d++) {
+    let offset = d % 2 === 0 ? d / 2 : -(Math.ceil(d / 2));
+    let level = targetLevel + offset;
+    if (level < 0 || level > 5) continue;
+    let pool = QUESTIONS.filter(q => q.level === level && !state.administeredIds.includes(q.id));
+    if (pool.length > 0) {
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+  }
+  return null;
+}
+
 // ─── Question Bank ───
 const QUESTIONS = [
   // ═══ A1 ═══
@@ -490,16 +557,17 @@ const QUESTIONS = [
 // ─── State ───
 let state = {
   currentLevel: 1,       // start at A2
-  levelCorrect: {},      // {level: {correct, total, time}}
-  currentQ: 0,           // index in selectedQuestions
-  selectedQ: [],         // ordered question IDs
+  theta: 0,              // IRT ability estimate
+  thetaSE: Math.sqrt(THETA_PRIOR_VAR),  // standard error
+  totalQuestions: 0,
+  currentQ: 0,           // questions answered so far
   responses: [],         // {qId, level, correct, time, answer}
   essays: [],            // [{prompt, text}]
   qStartTime: 0,
   started: false,
-  totalQuestions: 0,
   levelTransitions: [],  // [{from, to, reason}]
-  consecutiveCorrect: 0,
+  administeredIds: [],
+  questionsSinceReeval: 0,
 };
 
 const ESSAY_PROMPTS = [
@@ -507,66 +575,57 @@ const ESSAY_PROMPTS = [
   "What are the advantages and disadvantages of social media? Share your opinion. (150-250 words)",
 ];
 
-// ─── Adaptive Logic ───
-function selectQuestions() {
-  // Strategy: ~25 questions, weighted toward the user's likely level
-  // We'll adapt in real-time but pre-select a balanced pool
-  let byLevel = {};
-  QUESTIONS.forEach(q => {
-    if(!byLevel[q.level]) byLevel[q.level] = [];
-    byLevel[q.level].push(q.id);
-  });
+// ─── Adaptive Engine ───
+function getAdaptiveNextQuestion() {
+  let targetLevel = state.currentLevel;
+  let lastResponse = state.totalQuestions > 0 ? state.responses[state.responses.length - 1] : null;
+  let transitionReason = '';
   
-  let selected = [];
-  // Always include some from each level near the starting point
-  let startLevel = state.currentLevel;
-  
-  // Flatten: pick 4-5 from each level, more from the target zone
-  for(let l = 0; l <= 5; l++) {
-    let pool = byLevel[l] || [];
-    let count = l === startLevel ? 6 : (Math.abs(l - startLevel) <= 1 ? 4 : 3);
-    let shuffled = [...pool].sort(() => Math.random() - 0.5);
-    selected.push(...shuffled.slice(0, count));
-  }
-  
-  // Shuffle and limit to ~25
-  selected = selected.sort(() => Math.random() - 0.5).slice(0, 25);
-  // Ensure we have questions from the starting level
-  if(!selected.some(id => QUESTIONS.find(q => q.id === id).level === startLevel)) {
-    let pool = byLevel[startLevel] || [];
-    if(pool.length) selected.unshift(pool[0]);
-  }
-  
-  state.selectedQ = selected;
-  state.totalQuestions = selected.length;
-}
-
-function getLevelForQuestion(level) {
-  let stats = state.levelCorrect[level] || {correct:0, total:0, time:0};
-  let accuracy = stats.total > 0 ? stats.correct / stats.total : 0;
-  
-  // After 3+ questions in a level, consider adjusting
-  if(stats.total >= 3) {
-    if(accuracy >= 0.75 && state.currentLevel < 5) {
-      return state.currentLevel + 1; // level up
-    } else if(accuracy <= 0.3 && state.currentLevel > 0) {
-      return state.currentLevel - 1; // level down
+  if (state.totalQuestions > 0) {
+    if (state.questionsSinceReeval >= REEVAL_INTERVAL) {
+      let iret = estimateIRT();
+      state.theta = iret.theta;
+      state.thetaSE = iret.se;
+      state.questionsSinceReeval = 0;
+      targetLevel = levelFromTheta(state.theta);
+      transitionReason = `IRT re-evaluation (θ=${state.theta.toFixed(2)}, SE=${state.thetaSE.toFixed(2)})`;
+    } else {
+      if (lastResponse.correct && state.currentLevel < 5) {
+        targetLevel = state.currentLevel + 1;
+      } else if (!lastResponse.correct && state.currentLevel > 0) {
+        targetLevel = state.currentLevel - 1;
+      } else {
+        targetLevel = state.currentLevel;
+      }
     }
   }
-  // Check consecutive correct for quick level-up
-  if(state.consecutiveCorrect >= 3 && state.currentLevel < 5) {
-    return state.currentLevel + 1;
+  
+  targetLevel = Math.max(0, Math.min(5, targetLevel));
+  
+  let question = pickQuestion(targetLevel);
+  if (!question) {
+    if (state.totalQuestions >= MIN_QUESTIONS) {
+      finishQuestions();
+      return null;
+    }
+    let remaining = QUESTIONS.filter(q => !state.administeredIds.includes(q.id));
+    if (remaining.length === 0) { finishQuestions(); return null; }
+    question = remaining[Math.floor(Math.random() * remaining.length)];
   }
-  return state.currentLevel;
-}
-
-function getNextQuestion() {
-  if(state.currentQ >= state.selectedQ.length) {
-    // Generate more or go to essay
-    return null;
+  
+  if (targetLevel !== state.currentLevel) {
+    if (!transitionReason) {
+      transitionReason = lastResponse && lastResponse.correct ? 'correct → harder' : 'wrong → easier';
+    }
+    state.levelTransitions.push({
+      from: state.currentLevel,
+      to: targetLevel,
+      reason: transitionReason
+    });
+    state.currentLevel = targetLevel;
   }
-  let qId = state.selectedQ[state.currentQ];
-  return QUESTIONS.find(q => q.id === qId);
+  
+  return question;
 }
 
 // ─── UI ───
@@ -578,31 +637,33 @@ function showScreen(id) {
 function startTest() {
   state.started = true;
   state.currentLevel = 1;
-  state.levelCorrect = {};
+  state.theta = 0;
+  state.thetaSE = Math.sqrt(THETA_PRIOR_VAR);
   state.responses = [];
   state.essays = [];
   state.currentQ = 0;
-  state.consecutiveCorrect = 0;
+  state.totalQuestions = 0;
   state.levelTransitions = [];
-  selectQuestions();
+  state.administeredIds = [];
+  state.questionsSinceReeval = 0;
   showScreen('question');
   renderQuestion();
 }
 
 function renderQuestion() {
-  let data = getNextQuestion();
-  if(!data) { finishQuestions(); return; }
-  
-  // Adaptive: check if we should adjust level
-  let newLevel = getLevelForQuestion(data.level);
-  if(newLevel !== state.currentLevel) {
-    state.levelTransitions.push({from:state.currentLevel, to:newLevel, reason:accuracyBased()});
-    state.currentLevel = newLevel;
-    showLevelUp(CEFR[newLevel]);
-    return;
+  let prevLevel = state.currentLevel;
+  let data;
+  if (state.totalQuestions === 0) {
+    let pool = QUESTIONS.filter(q => q.level === 1);
+    data = pool[Math.floor(Math.random() * pool.length)];
+  } else {
+    data = getAdaptiveNextQuestion();
   }
+  if (!data) return;
   
-  document.getElementById('qNum').textContent = `${state.currentQ + 1} / ${state.totalQuestions}`;
+  state.administeredIds.push(data.id);
+  
+  document.getElementById('qNum').textContent = `Question ${state.currentQ + 1}`;
   document.getElementById('qLevel').textContent = CEFR[data.level] + ' ' + CAT_NAMES[data.type] || data.type;
   document.getElementById('qCategory').textContent = data.cat || data.type;
   
@@ -627,6 +688,13 @@ function renderQuestion() {
   state.qStartTime = Date.now();
   updateProgress();
   updateTopBar(data.level);
+  
+  // Show level-up overlay if we moved to a higher level
+  if (state.currentLevel > prevLevel) {
+    document.getElementById('luTitle').textContent = '🎉 Level Up!';
+    document.getElementById('luLabel').textContent = `You reached ${CEFR_FULL[state.currentLevel]}`;
+    document.getElementById('levelUp').classList.add('show');
+  }
 }
 
 let CAT_NAMES = {Grammar:'Grammar',Vocabulary:'Vocab',Reading:'Reading'};
@@ -645,17 +713,6 @@ function selectAnswer(idx, data) {
     if(i === idx) o.classList.add('selected');
   });
   
-  // Track
-  if(!state.levelCorrect[data.level]) state.levelCorrect[data.level] = {correct:0, total:0, time:0};
-  if(correct) {
-    state.levelCorrect[data.level].correct++;
-    state.consecutiveCorrect++;
-  } else {
-    state.consecutiveCorrect = 0;
-  }
-  state.levelCorrect[data.level].total++;
-  state.levelCorrect[data.level].time += time;
-  
   state.responses.push({
     questionId: data.id,
     level: data.level,
@@ -666,6 +723,15 @@ function selectAnswer(idx, data) {
     correctAnswer: data.a,
     levelLabel: CEFR[data.level]
   });
+  
+  state.currentQ++;
+  state.totalQuestions = state.currentQ;
+  state.questionsSinceReeval++;
+  
+  // Update IRT estimate after each response
+  let iret = estimateIRT();
+  state.theta = iret.theta;
+  state.thetaSE = iret.se;
   
   // Feedback
   let fb = document.getElementById('feedback');
@@ -685,7 +751,15 @@ function selectAnswer(idx, data) {
 }
 
 function nextQuestion() {
-  state.currentQ++;
+  // CAT stopping rules
+  if (state.currentQ >= MAX_QUESTIONS) {
+    finishQuestions();
+    return;
+  }
+  if (state.currentQ >= MIN_QUESTIONS && state.thetaSE <= THETA_SE_STOP) {
+    finishQuestions();
+    return;
+  }
   renderQuestion();
 }
 
@@ -697,11 +771,6 @@ function showLevelUp(newLevel) {
 
 function dismissLevelUp() {
   document.getElementById('levelUp').classList.remove('show');
-  renderQuestion();
-}
-
-function accuracyBased() {
-  return 'adaptive adjustment';
 }
 
 function finishQuestions() {
@@ -764,29 +833,9 @@ function renderResult() {
   let acc = total > 0 ? Math.round(correct / total * 100) : 0;
   let avgTime = total > 0 ? (state.responses.reduce((s, r) => s + r.time, 0) / total) : 0;
   
-  // Determine level
-  let levelScores = {};
-  state.responses.forEach(r => {
-    if(!levelScores[r.level]) levelScores[r.level] = {correct:0, total:0};
-    levelScores[r.level].total++;
-    if(r.correct) levelScores[r.level].correct++;
-  });
-  
-  let finalLevel = 1; // A2 default
-  let bestAcc = 0;
-  for(let l = 0; l <= 5; l++) {
-    if(levelScores[l] && levelScores[l].total >= 2) {
-      let acc = levelScores[l].correct / levelScores[l].total;
-      if(acc >= 0.6 && l > finalLevel) finalLevel = l;
-    }
-  }
-  // If all levels below are solid, push up
-  for(let l = finalLevel; l >= 1; l--) {
-    if(levelScores[l-1] && levelScores[l-1].total >= 2 && levelScores[l-1].correct / levelScores[l-1].total < 0.5) {
-      finalLevel = l - 1;
-    }
-  }
-  
+  // Determine level from theta estimate
+  let finalLevel = levelFromTheta(state.theta);
+  finalLevel = Math.max(0, Math.min(5, finalLevel));
   state.finalLevel = finalLevel;
   
   // Stats UI
@@ -804,7 +853,7 @@ function renderResult() {
     el.className = 'cefr-rung';
     if(l < finalLevel) el.classList.add('achieved');
     else if(l === finalLevel) el.classList.add('current');
-    else if(levelScores[l] && levelScores[l].total > 0) el.classList.add('tried');
+    else if(state.responses.some(r => r.level === l)) el.classList.add('tried');
     el.textContent = CEFR[l];
     ladder.appendChild(el);
   }
@@ -905,16 +954,17 @@ function resetTest() {
   if(confirm('Reset all progress and start over?')) {
     state = {
       currentLevel: 1,
-      levelCorrect: {},
+      theta: 0,
+      thetaSE: Math.sqrt(THETA_PRIOR_VAR),
+      totalQuestions: 0,
       currentQ: 0,
-      selectedQ: [],
       responses: [],
       essays: [],
       qStartTime: 0,
       started: false,
-      totalQuestions: 0,
       levelTransitions: [],
-      consecutiveCorrect: 0,
+      administeredIds: [],
+      questionsSinceReeval: 0,
     };
     essaySkipped = [false, false];
     document.getElementById('progressFill').style.width = '0%';
@@ -923,7 +973,7 @@ function resetTest() {
 }
 
 function updateProgress(pct) {
-  let val = pct !== undefined ? pct : (state.totalQuestions > 0 ? Math.round(state.currentQ / state.totalQuestions * 100) : 0);
+  let val = pct !== undefined ? pct : Math.round(state.currentQ / MAX_QUESTIONS * 100);
   document.getElementById('progressFill').style.width = val + '%';
 }
 
