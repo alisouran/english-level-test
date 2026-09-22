@@ -740,6 +740,131 @@ body{
   #screen-welcome.active .welcome #btnStart{animation:none!important;opacity:1!important;transform:none!important}
 }
 
+/* ─── History Screen ─── */
+.history{padding-top:10px}
+.history-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:1.2rem;
+}
+.history-header h2{font-size:1.3rem;font-weight:700;margin:0}
+.history-list{
+  display:flex;flex-direction:column;gap:10px;
+  max-height:60vh;overflow-y:auto;
+  padding-right:4px;
+}
+.history-list::-webkit-scrollbar{width:4px}
+.history-list::-webkit-scrollbar-track{background:transparent}
+.history-list::-webkit-scrollbar-thumb{
+  background:rgba(162,155,254,0.3);border-radius:var(--radius-full);
+}
+.history-item{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;
+  background:var(--bg-glass);backdrop-filter:blur(12px) saturate(1.2);
+  -webkit-backdrop-filter:blur(12px) saturate(1.2);
+  border:var(--border-glass);border-radius:var(--radius-md);
+  padding:14px 16px;
+  transition:all var(--duration-fast) var(--ease-out);
+  cursor:pointer;
+}
+.history-item:hover{
+  background:var(--bg-glass-hover);
+  transform:translateY(-2px);
+}
+.history-item:active{transform:translateY(0) scale(0.99)}
+.history-item .h-date{font-size:0.8rem;color:var(--text-muted);white-space:nowrap}
+.history-item .h-level{
+  font-size:0.7rem;font-weight:700;padding:3px 10px;
+  border-radius:var(--radius-full);
+  background:rgba(108,92,231,0.2);color:var(--accent-2);
+  backdrop-filter:blur(4px);white-space:nowrap;
+}
+.history-item .h-theta{font-size:0.75rem;color:var(--text-secondary);font-weight:500}
+.history-item .h-accuracy{
+  font-size:0.75rem;font-weight:600;color:var(--success);
+  white-space:nowrap;
+}
+.history-empty{
+  text-align:center;padding:40px 20px;
+  color:var(--text-muted);font-size:0.9rem;
+}
+.history-detail{margin-top:1.2rem}
+
+/* ─── Welcome Returning ─── */
+.welcome-returning{
+  margin-top:1rem;text-align:center;
+}
+.returning-badge{
+  display:inline-block;
+  padding:4px 16px;border-radius:var(--radius-full);
+  background:var(--accent-grad-2);color:var(--text-inverse);
+  font-size:0.75rem;font-weight:700;
+  box-shadow:0 0 15px rgba(92,170,116,0.25);
+}
+.returning-level{
+  font-size:0.9rem;color:var(--text-secondary);
+  margin-top:4px;
+}
+.returning-actions{
+  display:flex;flex-direction:row;gap:10px;
+  justify-content:center;margin-top:12px;
+}
+
+/* ─── Settings Screen ─── */
+.settings{
+  text-align:center;
+  background:var(--bg-glass);backdrop-filter:blur(16px) saturate(1.2);
+  -webkit-backdrop-filter:blur(16px) saturate(1.2);
+  border:var(--border-glass);border-radius:var(--radius-xl);
+  padding:32px 24px 28px;width:100%;max-width:480px;
+  margin:0 auto;
+}
+.settings-group{
+  background:var(--bg-glass);backdrop-filter:blur(12px) saturate(1.2);
+  -webkit-backdrop-filter:blur(12px) saturate(1.2);
+  border:var(--border-glass);border-radius:var(--radius-md);
+  padding:16px;margin-bottom:1rem;text-align:left;
+}
+.settings-group h3{
+  font-size:0.9rem;font-weight:600;color:var(--text-primary);
+  margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;
+}
+
+/* ─── Back Button (ghost) ─── */
+.btn-back{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:8px 16px;border:none;border-radius:var(--radius-md);
+  font:inherit;font-size:0.85rem;font-weight:600;
+  background:transparent;color:var(--accent-2);cursor:pointer;
+  transition:all var(--duration-fast) var(--ease-out);
+}
+.btn-back:hover{
+  background:var(--bg-glass-hover);color:var(--accent-1);
+  transform:translateY(-1px);
+}
+.btn-back:active{transform:translateY(0) scale(0.98)}
+.btn-back:focus-visible{
+  outline:2px solid var(--accent-1);outline-offset:3px;
+}
+
+/* ─── Danger Button ─── */
+.btn-danger{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 24px;border:var(--border-glass);border-radius:var(--radius-md);
+  font:inherit;font-size:0.9rem;font-weight:600;
+  background:var(--error-bg);color:var(--error);cursor:pointer;
+  transition:all var(--duration-fast) var(--ease-out);
+}
+.btn-danger:hover{
+  background:rgba(229,115,115,0.2);
+  border-color:rgba(229,115,115,0.4);
+  transform:translateY(-1px);
+}
+.btn-danger:active{transform:translateY(0) scale(0.98)}
+.btn-danger:focus-visible{
+  outline:2px solid var(--error);outline-offset:3px;
+}
+
 /* ─── Print ─── */
 @media print{
   .top-bar,.progress-track,.ambient,.confetti-container{display:none!important}
