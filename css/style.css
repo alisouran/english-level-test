@@ -210,7 +210,6 @@ body{
 /* ─── Screens ─── */
 .screen{display:none}
 .screen.active{display:block}
-.screen.active .welcome,
 .screen.active .quest-header,
 .screen.active .quest-category,
 .screen.active .quest-text,
@@ -253,35 +252,72 @@ body{
 }
 
 /* ─── Welcome Screen ─── */
+#screen-welcome.active{
+  display:flex;align-items:center;min-height:calc(100dvh - 100px);
+}
 .welcome{
-  text-align:center;padding-top:40px;
+  text-align:center;
   background:var(--bg-glass);backdrop-filter:blur(16px) saturate(1.2);
   -webkit-backdrop-filter:blur(16px) saturate(1.2);
   border:var(--border-glass);border-radius:var(--radius-xl);
-  padding:40px 24px 32px;
+  padding:32px 24px 28px;width:100%;
 }
-.welcome .hero-icon{font-size:4rem;margin-bottom:1rem;display:block}
-.welcome h1{
-  font-size:clamp(1.6rem,5vw,2.2rem);font-weight:800;margin-bottom:0.5rem;
+.welcome .hero-icon{margin-bottom:0.75rem;display:flex;justify-content:center}
+.welcome .hero-icon svg{width:64px;height:64px}
+.welcome .ws-h1{
+  font-size:clamp(1.5rem,5vw,2rem);font-weight:800;margin-bottom:0.5rem;
   letter-spacing:-0.5px;
 }
-.welcome h1 span{
+.welcome .ws-h1 span{
   background:var(--accent-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
 }
-.welcome p{
-  color:var(--text-secondary);font-size:0.9rem;max-width:380px;
-  margin:0 auto 1.5rem;line-height:1.7;
+.welcome .ws-desc{
+  color:#d0c8d8;font-size:0.88rem;max-width:380px;
+  margin:0 auto 1rem;line-height:1.7;
 }
 .welcome .features{
-  display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:2rem;
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+  max-width:300px;margin:0 auto 1.5rem;
 }
-.welcome .features span{
-  padding:6px 14px;border-radius:var(--radius-full);font-size:0.75rem;font-weight:600;
+.welcome .features .ws-pill{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:7px 12px;border-radius:var(--radius-full);font-size:0.75rem;font-weight:600;
   background:var(--bg-glass);color:var(--accent-2);
   border:var(--border-glass);transition:all var(--duration-fast) var(--ease-out);
 }
-.welcome .features span:hover{
+.welcome .features .ws-pill:hover{
   background:var(--bg-glass-hover);border-color:rgba(162,155,254,0.2);
+}
+.welcome .features .ws-pill svg{flex-shrink:0;display:block}
+
+/* ─── Welcome staggered entrance ─── */
+#screen-welcome.active .welcome .hero-icon{
+  animation:welcomeFadeIn 0.5s var(--ease-out) both;
+}
+#screen-welcome.active .welcome .ws-h1{
+  animation:welcomeFadeIn 0.5s var(--ease-out) 0.1s both;
+}
+#screen-welcome.active .welcome .ws-desc{
+  animation:welcomeFadeIn 0.5s var(--ease-out) 0.2s both;
+}
+#screen-welcome.active .welcome .features .ws-pill:nth-child(1){
+  animation:welcomeFadeIn 0.5s var(--ease-out) 0.3s both;
+}
+#screen-welcome.active .welcome .features .ws-pill:nth-child(2){
+  animation:welcomeFadeIn 0.5s var(--ease-out) 0.35s both;
+}
+#screen-welcome.active .welcome .features .ws-pill:nth-child(3){
+  animation:welcomeFadeIn 0.5s var(--ease-out) 0.4s both;
+}
+#screen-welcome.active .welcome .features .ws-pill:nth-child(4){
+  animation:welcomeFadeIn 0.5s var(--ease-out) 0.45s both;
+}
+#screen-welcome.active .welcome #btnStart{
+  animation:welcomeFadeIn 0.5s var(--ease-out) 0.5s both;
+}
+@keyframes welcomeFadeIn{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:translateY(0)}
 }
 
 /* ─── Buttons ─── */
@@ -665,8 +701,12 @@ body{
 /* ─── Responsive ─── */
 @media(max-width:480px){
   .main{padding:76px 12px 30px}
+  #screen-welcome.active{min-height:calc(100dvh - 90px)}
   .welcome{padding:28px 16px 24px}
-  .welcome .features span{font-size:0.7rem;padding:4px 10px}
+  .welcome .hero-icon svg{width:52px;height:52px}
+  .welcome .features{max-width:260px;gap:6px}
+  .welcome .features .ws-pill{font-size:0.7rem;padding:6px 10px;gap:5px}
+  .welcome .features .ws-pill svg{width:16px;height:16px}
   .option{padding:12px 14px;font-size:0.9rem}
   .stat-grid{grid-template-columns:1fr 1fr;gap:8px}
   .stat-card{padding:12px}
@@ -693,6 +733,11 @@ body{
   .skeleton-line,.skeleton-option{animation:none!important;background:var(--skeleton-base)!important}
   .option:hover{transform:none!important}
   .est-level{animation:none!important}
+  #screen-welcome.active .welcome .hero-icon,
+  #screen-welcome.active .welcome .ws-h1,
+  #screen-welcome.active .welcome .ws-desc,
+  #screen-welcome.active .welcome .features .ws-pill,
+  #screen-welcome.active .welcome #btnStart{animation:none!important;opacity:1!important;transform:none!important}
 }
 
 /* ─── Print ─── */

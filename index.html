@@ -31,8 +31,8 @@
   <!-- Top Bar (banner landmark) -->
   <header class="top-bar" role="banner" aria-label="Test header">
     <div class="logo" aria-label="LingoQuest">✦ LingoQuest</div>
-    <div><span class="score-dot" id="topScore" aria-label="Score">0 / 0</span></div>
-    <div><span class="level-badge" id="topLevel" aria-label="Current level">A2</span></div>
+    <div><span class="score-dot" id="topScore" aria-label="Test status">Ready</span></div>
+    <div><span class="level-badge" id="topLevel" aria-label="Starting level">—</span></div>
   </header>
 
   <!-- Progress indicator -->
@@ -45,16 +45,56 @@
     <!-- ═══ Welcome ═══ -->
     <section class="screen active" id="screen-welcome" aria-label="Welcome screen">
       <div class="welcome">
-        <div class="hero-icon" aria-hidden="true">🌍</div>
-        <h1>Find Your <span>English Level</span></h1>
-        <p>An adaptive test that finds your real CEFR level — from A1 to C2. Answer ~25 smart questions, write a short essay, and get an AI-ready assessment.</p>
-        <div class="features" role="list" aria-label="Test features">
-          <span role="listitem">🧠 Adaptive</span>
-          <span role="listitem">⚡ ~15 min</span>
-          <span role="listitem">📊 CEFR Score</span>
-          <span role="listitem">✍️ Optional Essay</span>
+        <div class="hero-icon" aria-hidden="true">
+          <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="heroGlobe" x1="0" y1="0" x2="72" y2="72">
+                <stop stop-color="#6c5ce7"/>
+                <stop offset="1" stop-color="#a29bfe"/>
+              </linearGradient>
+            </defs>
+            <circle cx="36" cy="36" r="30" stroke="url(#heroGlobe)" stroke-width="2.5" opacity="0.9"/>
+            <ellipse cx="36" cy="36" rx="13" ry="30" stroke="url(#heroGlobe)" stroke-width="2" opacity="0.65"/>
+            <line x1="6" y1="36" x2="66" y2="36" stroke="url(#heroGlobe)" stroke-width="2" opacity="0.65"/>
+            <line x1="12" y1="22" x2="60" y2="22" stroke="url(#heroGlobe)" stroke-width="1.5" opacity="0.35"/>
+            <line x1="12" y1="50" x2="60" y2="50" stroke="url(#heroGlobe)" stroke-width="1.5" opacity="0.35"/>
+            <circle cx="36" cy="36" r="5" fill="url(#heroGlobe)" opacity="0.5"/>
+          </svg>
         </div>
-        <button class="btn-primary" id="btnStart" type="button">Start Test →</button>
+        <h1 class="ws-h1">Find Your <span>English Level</span></h1>
+        <p class="ws-desc">An adaptive test that finds your real CEFR level — from A1 to C2. Answer ~25 smart questions, write a short essay, and get an AI-ready assessment.</p>
+        <div class="features" role="list" aria-label="Test features">
+          <span role="listitem" class="ws-pill">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M9 2C6.8 2 5 3.6 5 5.8c0 1.2.6 2.3 1.5 3-.3.7-.7 1.3-1.1 1.7-.4.4-.6 1-.5 1.6.1.6.4 1.1.8 1.4.4.3 1 .5 1.5.5h4.6c1.3 0 2.4-1.1 2.4-2.4 0-.7-.2-1.3-.6-1.7-.4-.4-.7-1-.7-1.7C12.5 3.5 10.9 2 9 2z" stroke="#a29bfe" stroke-width="1.3" fill="none" stroke-linejoin="round"/>
+              <path d="M7 9.5l2 1.5 2-1.5M9 11V7" stroke="#a29bfe" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Adaptive
+          </span>
+          <span role="listitem" class="ws-pill">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M6 2v14M12 2v14M2 6h14M2 12h14" stroke="#a29bfe" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="9" cy="9" r="7" stroke="#a29bfe" stroke-width="1.2" fill="none"/>
+            </svg>
+            ~15 min
+          </span>
+          <span role="listitem" class="ws-pill">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect x="2" y="10" width="3" height="6" rx="0.8" fill="#a29bfe" opacity="0.8"/>
+              <rect x="7.5" y="6" width="3" height="10" rx="0.8" fill="#a29bfe" opacity="0.6"/>
+              <rect x="13" y="2" width="3" height="14" rx="0.8" fill="#a29bfe" opacity="0.4"/>
+            </svg>
+            CEFR Score
+          </span>
+          <span role="listitem" class="ws-pill">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M3 14l4-5 3 2 5-7" stroke="#a29bfe" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <path d="M3 14h12" stroke="#a29bfe" stroke-width="1" stroke-linecap="round"/>
+            </svg>
+            Optional Essay
+          </span>
+        </div>
+        <button class="btn-primary" id="btnStart" type="button">Begin Assessment</button>
       </div>
     </section>
 
