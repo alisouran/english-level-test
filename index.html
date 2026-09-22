@@ -427,98 +427,1532 @@ function pickQuestion(targetLevel) {
 
 // ─── Question Bank ───
 const QUESTIONS = [
-  // ═══ A1 ═══
-  {id:"a1-1",level:0,type:"Vocabulary",cat:"Core",
-   q:"Which word means a place where you live?",
-   opts:["Car","House","Table","Apple"],a:1},
-  {id:"a1-2",level:0,type:"Grammar",cat:"Verb To Be",
-   q:"She ___ a teacher.",
-   opts:["am","is","are","be"],a:1},
-  {id:"a1-3",level:0,type:"Vocabulary",cat:"Daily Life",
-   q:"What do you do in the morning?",
-   opts:["Sleep all day","Eat breakfast","Drive a car","Read a book"],a:1},
-  {id:"a1-4",level:0,type:"Grammar",cat:"Present Simple",
-   q:"They ___ coffee every morning.",
-   opts:["drink","drinks","drinking","drank"],a:0},
-  {id:"a1-5",level:0,type:"Vocabulary",cat:"Numbers",
-   q:"What comes after 'first'?",
-   opts:["One","Second","Once","Firstly"],a:1},
-  // ═══ A2 ═══
-  {id:"a2-1",level:1,type:"Grammar",cat:"Past Simple",
-   q:"Yesterday, I ___ to the park.",
-   opts:["go","goes","went","gone"],a:2},
-  {id:"a2-2",level:1,type:"Vocabulary",cat:"Travel",
-   q:"A 'passport' is something you need when you ___.",
-   opts:["go shopping","travel abroad","cook dinner","watch TV"],a:1},
-  {id:"a2-3",level:1,type:"Grammar",cat:"Comparatives",
-   q:"This book is ___ than that one.",
-   opts:["cheap","cheaper","cheapest","more cheap"],a:1},
-  {id:"a2-4",level:1,type:"Vocabulary",cat:"Feelings",
-   q:"If you are 'excited', you feel ___.",
-   ops:["Tired and sleepy","Happy and eager","Angry and upset","Bored and uninterested"],
-   // Fallback: use opts:
-   opts:["Tired and sleepy","Happy and eager","Angry and upset","Bored and uninterested"],a:1},
-  {id:"a2-5",level:1,type:"Grammar",cat:"Prepositions",
-   q:"The cat is ___ the table.",
-   opts:["on","at","in","to"],a:0},
-  // ═══ B1 ═══
-  {id:"b1-1",level:2,type:"Grammar",cat:"Present Perfect",
-   q:"I ___ never ___ to Japan.",
-   opts:["have…be","have…been","has…been","did…go"],a:1},
-  {id:"b1-2",level:2,type:"Vocabulary",cat:"Work",
-   q:"If you get a 'promotion', you ___.",
-   opts:["lose your job","move to a higher position","work fewer hours","get paid less"],a:1},
-  {id:"b1-3",level:2,type:"Grammar",cat:"Conditionals",
-   q:"If it rains, I ___ stay home.",
-   opts:["will","would","am","have"],a:0},
-  {id:"b1-4",level:2,type:"Vocabulary",cat:"Relationships",
-   q:"A 'colleague' is someone you ___.",
-   opts:["live with","work with","study with","travel with"],a:1},
-  {id:"b1-5",level:2,type:"Grammar",cat:"Modals",
-   q:"You ___ wear a seatbelt while driving.",
-   opts:["must","can","might","could"],a:0},
-  {id:"b1-6",level:2,type:"Reading",cat:"Comprehension",
-   q:"Read: 'Sarah had been saving for months. Finally, she booked her flight to Barcelona. She was nervous but excited.' Why did Sarah feel nervous?",
-   opts:["She lost her money","She was traveling alone","She had never been to Barcelona","The text doesn't say"],a:3},
-  // ═══ B2 ═══
-  {id:"b2-1",level:3,type:"Grammar",cat:"Passive Voice",
-   q:"The letter ___ yesterday.",
-   opts:["sent","was sent","has sent","is sending"],a:1},
-  {id:"b2-2",level:3,type:"Vocabulary",cat:"Collocations",
-   q:"Which word goes with 'make'?",
-   opts:["a decision","a photo","a nap","a run"],a:0},
-  {id:"b2-3",level:3,type:"Grammar",cat:"Relative Clauses",
-   q:"The woman ___ lives next door is a doctor.",
-   opts:["which","who","whom","whose"],a:1},
-  {id:"b2-4",level:3,type:"Vocabulary",cat:"Phrasal Verbs",
-   q:"'Give up' means to ___.",
-   opts:["donate","stop trying","distribute","surrender something"],a:1},
-  {id:"b2-5",level:3,type:"Reading",cat:"Comprehension",
-   q:"Passage: 'Despite the initial setbacks, the team persevered and ultimately delivered an exceptional product. Their dedication was commendable.' What does 'persevered' mean?",
-   opts:["Gave up easily","Continued despite difficulties","Started late","Changed direction"],a:1},
-  // ═══ C1 ═══
-  {id:"c1-1",level:4,type:"Grammar",cat:"Inversion",
-   q:"___ had she arrived when the phone rang.",
-   opts:["No sooner","Not only","Hardly","Never"],a:2},
-  {id:"c1-2",level:4,type:"Vocabulary",cat:"Nuance",
-   q:"The word 'ubiquitous' means ___.",
-   opts:["extremely rare","found everywhere","very expensive","completely unique"],a:1},
-  {id:"c1-3",level:4,type:"Grammar",cat:"Advanced Conditionals",
-   q:"Had I known earlier, I ___ things differently.",
-   opts:["would do","would have done","will do","did"],a:1},
-  {id:"c1-4",level:4,type:"Vocabulary",cat:"Academic",
-   q:"The researcher's findings were 'inconclusive'. This means the results ___.",
-   opts:["were very clear","did not lead to a definite conclusion","were widely accepted","contradicted the hypothesis"],a:1},
-  // ═══ C2 ═══
-  {id:"c2-1",level:5,type:"Vocabulary",cat:"Idioms",
-   q:"'To pull out all the stops' means to ___.",
-   opts:["remove obstacles","make every possible effort","stop completely","cancel plans"],a:1},
-  {id:"c2-2",level:5,type:"Grammar",cat:"Advanced Structures",
-   q:"Were it not for her assistance, the project ___.",
-   opts:["would fail","would have failed","failed","will fail"],a:1},
-  {id:"c2-3",level:5,type:"Vocabulary",cat:"Precision",
-   q:"Choose the most precise word: 'His remarks were ___, causing widespread offense.'",
-   opts:["inappropriate","tactless","gratuitous","imprudent"],a:2},
+  {
+    "id": "a1-1",
+    "level": 0,
+    "type": "Grammar",
+    "cat": "Basic",
+    "q": "___ is a cat.",
+    "opts": [
+      "A",
+      "An",
+      "The",
+      "This"
+    ],
+    "a": 0
+  },
+  {
+    "id": "a1-2",
+    "level": 0,
+    "type": "Grammar",
+    "cat": "Basic",
+    "q": "I have ___ apple.",
+    "opts": [
+      "a",
+      "an",
+      "the",
+      "one"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a1-3",
+    "level": 0,
+    "type": "Grammar",
+    "cat": "Basic",
+    "q": "___ sun is hot.",
+    "opts": [
+      "A",
+      "An",
+      "The",
+      "One"
+    ],
+    "a": 2
+  },
+  {
+    "id": "a1-4",
+    "level": 0,
+    "type": "Grammar",
+    "cat": "Basic",
+    "q": "She ___ a student.",
+    "opts": [
+      "am",
+      "is",
+      "are",
+      "be"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a1-5",
+    "level": 0,
+    "type": "Grammar",
+    "cat": "Basic",
+    "q": "They ___ happy.",
+    "opts": [
+      "am",
+      "is",
+      "are",
+      "be"
+    ],
+    "a": 2
+  },
+  {
+    "id": "a1-6",
+    "level": 0,
+    "type": "Grammar",
+    "cat": "Basic",
+    "q": "He ___ not at home.",
+    "opts": [
+      "am",
+      "is",
+      "are",
+      "be"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a1-7",
+    "level": 0,
+    "type": "Grammar",
+    "cat": "Basic",
+    "q": "I ___ a teacher.",
+    "opts": [
+      "am",
+      "is",
+      "are",
+      "be"
+    ],
+    "a": 0
+  },
+  {
+    "id": "a1-8",
+    "level": 0,
+    "type": "Grammar",
+    "cat": "Basic",
+    "q": "We ___ from Iran.",
+    "opts": [
+      "am",
+      "is",
+      "are",
+      "be"
+    ],
+    "a": 2
+  },
+  {
+    "id": "a1-9",
+    "level": 0,
+    "type": "Grammar",
+    "cat": "Basic",
+    "q": "This is ___ book.",
+    "opts": [
+      "I",
+      "my",
+      "me",
+      "mine"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a1-10",
+    "level": 0,
+    "type": "Grammar",
+    "cat": "Basic",
+    "q": "___ is your name?",
+    "opts": [
+      "What",
+      "How",
+      "Who",
+      "Where"
+    ],
+    "a": 0
+  },
+  {
+    "id": "a1-11",
+    "level": 0,
+    "type": "Grammar",
+    "cat": "Basic",
+    "q": "I ___ like coffee.",
+    "opts": [
+      "don't",
+      "doesn't",
+      "not",
+      "am not"
+    ],
+    "a": 0
+  },
+  {
+    "id": "a1-12",
+    "level": 0,
+    "type": "Grammar",
+    "cat": "Basic",
+    "q": "She ___ like tea.",
+    "opts": [
+      "don't",
+      "doesn't",
+      "not",
+      "isn't"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a1-13",
+    "level": 0,
+    "type": "Grammar",
+    "cat": "Basic",
+    "q": "___ you like music?",
+    "opts": [
+      "Does",
+      "Do",
+      "Are",
+      "Is"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a1-14",
+    "level": 0,
+    "type": "Grammar",
+    "cat": "Basic",
+    "q": "I have two ___ .",
+    "opts": [
+      "cat",
+      "cats",
+      "cat's",
+      "caties"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a1-15",
+    "level": 0,
+    "type": "Grammar",
+    "cat": "Basic",
+    "q": "The ___ are playing.",
+    "opts": [
+      "child",
+      "childs",
+      "children",
+      "childes"
+    ],
+    "a": 2
+  },
+  {
+    "id": "a1-16",
+    "level": 0,
+    "type": "Vocabulary",
+    "cat": "Basic",
+    "q": "What color is the sky?",
+    "opts": [
+      "Red",
+      "Blue",
+      "Green",
+      "Yellow"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a1-17",
+    "level": 0,
+    "type": "Vocabulary",
+    "cat": "Basic",
+    "q": "How many legs does a dog have?",
+    "opts": [
+      "Two",
+      "Three",
+      "Four",
+      "Five"
+    ],
+    "a": 2
+  },
+  {
+    "id": "a1-18",
+    "level": 0,
+    "type": "Vocabulary",
+    "cat": "Basic",
+    "q": "What day comes after Monday?",
+    "opts": [
+      "Sunday",
+      "Tuesday",
+      "Wednesday",
+      "Friday"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a1-19",
+    "level": 0,
+    "type": "Vocabulary",
+    "cat": "Basic",
+    "q": "January is a ___.",
+    "opts": [
+      "day",
+      "month",
+      "year",
+      "week"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a1-20",
+    "level": 0,
+    "type": "Vocabulary",
+    "cat": "Basic",
+    "q": "Water is a ___.",
+    "opts": [
+      "food",
+      "drink",
+      "toy",
+      "color"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a1-21",
+    "level": 0,
+    "type": "Vocabulary",
+    "cat": "Basic",
+    "q": "I eat ___ for breakfast.",
+    "opts": [
+      "bread",
+      "water",
+      "air",
+      "stone"
+    ],
+    "a": 0
+  },
+  {
+    "id": "a1-22",
+    "level": 0,
+    "type": "Vocabulary",
+    "cat": "Basic",
+    "q": "My mother is my ___.",
+    "opts": [
+      "parent",
+      "sister",
+      "aunt",
+      "cousin"
+    ],
+    "a": 0
+  },
+  {
+    "id": "a1-23",
+    "level": 0,
+    "type": "Vocabulary",
+    "cat": "Basic",
+    "q": "I have two ___ and ten fingers.",
+    "opts": [
+      "hands",
+      "heads",
+      "noses",
+      "mouths"
+    ],
+    "a": 0
+  },
+  {
+    "id": "a1-24",
+    "level": 0,
+    "type": "Vocabulary",
+    "cat": "Basic",
+    "q": "I wear a ___ on my head.",
+    "opts": [
+      "hat",
+      "shoe",
+      "glove",
+      "sock"
+    ],
+    "a": 0
+  },
+  {
+    "id": "a1-25",
+    "level": 0,
+    "type": "Vocabulary",
+    "cat": "Basic",
+    "q": "A dog is an ___.",
+    "opts": [
+      "animal",
+      "plant",
+      "food",
+      "color"
+    ],
+    "a": 0
+  },
+  {
+    "id": "a1-26",
+    "level": 0,
+    "type": "Vocabulary",
+    "cat": "Basic",
+    "q": "The ___ is raining.",
+    "opts": [
+      "weather",
+      "sun",
+      "moon",
+      "star"
+    ],
+    "a": 0
+  },
+  {
+    "id": "a1-27",
+    "level": 0,
+    "type": "Vocabulary",
+    "cat": "Basic",
+    "q": "I sleep in a ___.",
+    "opts": [
+      "bed",
+      "table",
+      "chair",
+      "door"
+    ],
+    "a": 0
+  },
+  {
+    "id": "a1-28",
+    "level": 0,
+    "type": "Vocabulary",
+    "cat": "Basic",
+    "q": "My ___ is red.",
+    "opts": [
+      "car",
+      "car's",
+      "cars",
+      "caring"
+    ],
+    "a": 0
+  },
+  {
+    "id": "a1-29",
+    "level": 0,
+    "type": "Vocabulary",
+    "cat": "Basic",
+    "q": "One, two, three, ___.",
+    "opts": [
+      "five",
+      "four",
+      "six",
+      "seven"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a1-30",
+    "level": 0,
+    "type": "Vocabulary",
+    "cat": "Basic",
+    "q": "The opposite of big is ___.",
+    "opts": [
+      "small",
+      "tall",
+      "long",
+      "high"
+    ],
+    "a": 0
+  },
+  {
+    "id": "a1-31",
+    "level": 0,
+    "type": "Reading",
+    "cat": "Basic",
+    "q": "Tom is 10 years old. He has a dog named Max. Max is brown and white. What color is Max?",
+    "opts": [
+      "Brown",
+      "White",
+      "Brown and white",
+      "Black"
+    ],
+    "a": 2
+  },
+  {
+    "id": "a1-32",
+    "level": 0,
+    "type": "Reading",
+    "cat": "Basic",
+    "q": "Anna wakes up at 7 am. She eats breakfast at 7:30. She goes to school at 8. What does Anna do at 7?",
+    "opts": [
+      "Eats breakfast",
+      "Wakes up",
+      "Goes to school",
+      "Sleeps"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a1-33",
+    "level": 0,
+    "type": "Reading",
+    "cat": "Basic",
+    "q": "The store sells apples for $1 and oranges for $2. How much for one apple?",
+    "opts": [
+      "$1",
+      "$2",
+      "$3",
+      "$0.50"
+    ],
+    "a": 0
+  },
+  {
+    "id": "a1-34",
+    "level": 0,
+    "type": "Reading",
+    "cat": "Basic",
+    "q": "There are 5 birds in the tree. 2 fly away. How many are left?",
+    "opts": [
+      "2",
+      "3",
+      "5",
+      "7"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a1-35",
+    "level": 0,
+    "type": "Reading",
+    "cat": "Basic",
+    "q": "My house has 3 rooms: a kitchen, a bedroom, and a living room. How many rooms?",
+    "opts": [
+      "1",
+      "2",
+      "3",
+      "4"
+    ],
+    "a": 2
+  },
+  {
+    "id": "a2-1",
+    "level": 1,
+    "type": "Grammar",
+    "cat": "Present Continuous",
+    "q": "She ___ to music now.",
+    "opts": [
+      "listens",
+      "is listening",
+      "listened",
+      "will listen"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a2-2",
+    "level": 1,
+    "type": "Grammar",
+    "cat": "Past Simple",
+    "q": "We ___ to Paris last summer.",
+    "opts": [
+      "go",
+      "goes",
+      "went",
+      "gone"
+    ],
+    "a": 2
+  },
+  {
+    "id": "a2-3",
+    "level": 1,
+    "type": "Grammar",
+    "cat": "Comparatives",
+    "q": "My phone is ___ than yours.",
+    "opts": [
+      "cheap",
+      "cheaper",
+      "cheapest",
+      "more cheaper"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a2-4",
+    "level": 1,
+    "type": "Grammar",
+    "cat": "Prepositions",
+    "q": "Afraid ___ spiders?",
+    "opts": [
+      "from",
+      "with",
+      "of",
+      "about"
+    ],
+    "a": 2
+  },
+  {
+    "id": "a2-5",
+    "level": 1,
+    "type": "Grammar",
+    "cat": "Future",
+    "q": "They ___ finish next week.",
+    "opts": [
+      "will",
+      "are",
+      "have",
+      "did"
+    ],
+    "a": 0
+  },
+  {
+    "id": "a2-6",
+    "level": 1,
+    "type": "Grammar",
+    "cat": "Quantifiers",
+    "q": "How ___ sugar do you want?",
+    "opts": [
+      "many",
+      "much",
+      "some",
+      "any"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a2-7",
+    "level": 1,
+    "type": "Grammar",
+    "cat": "Present Perfect",
+    "q": "I have ___ finished.",
+    "opts": [
+      "yet",
+      "already",
+      "still",
+      "ever"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a2-8",
+    "level": 1,
+    "type": "Grammar",
+    "cat": "Present Simple",
+    "q": "She ___ to school by bus.",
+    "opts": [
+      "go",
+      "goes",
+      "going",
+      "went"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a2-9",
+    "level": 1,
+    "type": "Grammar",
+    "cat": "There is/are",
+    "q": "There ___ a book on the table.",
+    "opts": [
+      "am",
+      "is",
+      "are",
+      "be"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a2-10",
+    "level": 1,
+    "type": "Vocabulary",
+    "cat": "Travel",
+    "q": "A ___ catches planes.",
+    "opts": [
+      "bus station",
+      "train station",
+      "airport",
+      "harbor"
+    ],
+    "a": 2
+  },
+  {
+    "id": "a2-11",
+    "level": 1,
+    "type": "Vocabulary",
+    "cat": "Daily",
+    "q": "Eat ___ when hungry.",
+    "opts": [
+      "water",
+      "food",
+      "sleep",
+      "air"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a2-12",
+    "level": 1,
+    "type": "Vocabulary",
+    "cat": "Clothes",
+    "q": "Wear a ___ when cold.",
+    "opts": [
+      "t-shirt",
+      "coat",
+      "shorts",
+      "swimsuit"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a2-13",
+    "level": 1,
+    "type": "Vocabulary",
+    "cat": "Nature",
+    "q": "The ___ shines bright.",
+    "opts": [
+      "moon",
+      "sun",
+      "star",
+      "cloud"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a2-14",
+    "level": 1,
+    "type": "Vocabulary",
+    "cat": "Daily",
+    "q": "___ your teeth every day.",
+    "opts": [
+      "Wash",
+      "Clean",
+      "Brush",
+      "Dry"
+    ],
+    "a": 2
+  },
+  {
+    "id": "a2-15",
+    "level": 1,
+    "type": "Vocabulary",
+    "cat": "People",
+    "q": "A ___ teaches students.",
+    "opts": [
+      "doctor",
+      "teacher",
+      "driver",
+      "cook"
+    ],
+    "a": 1
+  },
+  {
+    "id": "a2-16",
+    "level": 1,
+    "type": "Reading",
+    "cat": "Comprehension",
+    "q": "She woke late, ran to the bus stop, bus left. What first?",
+    "opts": [
+      "She waited",
+      "Bus left",
+      "Woke up",
+      "Got dressed"
+    ],
+    "a": 2
+  },
+  {
+    "id": "a2-17",
+    "level": 1,
+    "type": "Reading",
+    "cat": "Comprehension",
+    "q": "Tom cooks every weekend. What does he do?",
+    "opts": [
+      "Goes out",
+      "Tries recipes",
+      "Eats pasta",
+      "Cooks meat"
+    ],
+    "a": 1
+  },
+  {
+    "id": "b1-1",
+    "level": 2,
+    "type": "Grammar",
+    "cat": "Present Perfect",
+    "q": "I ___ never ___ to Japan.",
+    "opts": [
+      "have...be",
+      "have...been",
+      "has...been",
+      "did...go"
+    ],
+    "a": 1
+  },
+  {
+    "id": "b1-2",
+    "level": 2,
+    "type": "Grammar",
+    "cat": "Conditionals",
+    "q": "If it rains, I ___ stay.",
+    "opts": [
+      "will",
+      "would",
+      "am",
+      "have"
+    ],
+    "a": 0
+  },
+  {
+    "id": "b1-3",
+    "level": 2,
+    "type": "Grammar",
+    "cat": "Modals",
+    "q": "You ___ finish homework first.",
+    "opts": [
+      "must",
+      "can",
+      "might",
+      "could"
+    ],
+    "a": 0
+  },
+  {
+    "id": "b1-4",
+    "level": 2,
+    "type": "Grammar",
+    "cat": "Prepositions",
+    "q": "She has worked here ___ 2019.",
+    "opts": [
+      "for",
+      "since",
+      "during",
+      "from"
+    ],
+    "a": 1
+  },
+  {
+    "id": "b1-5",
+    "level": 2,
+    "type": "Grammar",
+    "cat": "Relatives",
+    "q": "The book ___ is on the table is mine.",
+    "opts": [
+      "which",
+      "who",
+      "whose",
+      "whom"
+    ],
+    "a": 0
+  },
+  {
+    "id": "b1-6",
+    "level": 2,
+    "type": "Grammar",
+    "cat": "Gerunds",
+    "q": "I am used ___ early.",
+    "opts": [
+      "wake",
+      "to wake",
+      "to waking",
+      "waking"
+    ],
+    "a": 2
+  },
+  {
+    "id": "b1-7",
+    "level": 2,
+    "type": "Grammar",
+    "cat": "Past Perfect",
+    "q": "When we arrived they ___ dinner.",
+    "opts": [
+      "finished",
+      "had finished",
+      "have finished",
+      "finish"
+    ],
+    "a": 1
+  },
+  {
+    "id": "b1-8",
+    "level": 2,
+    "type": "Grammar",
+    "cat": "Reported Speech",
+    "q": "She asked where I ___.",
+    "opts": [
+      "live",
+      "lived",
+      "am living",
+      "will live"
+    ],
+    "a": 1
+  },
+  {
+    "id": "b1-9",
+    "level": 2,
+    "type": "Grammar",
+    "cat": "Correlatives",
+    "q": "Neither the manager ___ the employees knew.",
+    "opts": [
+      "or",
+      "nor",
+      "and",
+      "but"
+    ],
+    "a": 1
+  },
+  {
+    "id": "b1-10",
+    "level": 2,
+    "type": "Grammar",
+    "cat": "Wishes",
+    "q": "I wish I ___ speak French.",
+    "opts": [
+      "can",
+      "could",
+      "will",
+      "may"
+    ],
+    "a": 1
+  },
+  {
+    "id": "b1-11",
+    "level": 2,
+    "type": "Vocabulary",
+    "cat": "Work",
+    "q": "A colleague is someone you ___ with.",
+    "opts": [
+      "live",
+      "work",
+      "study",
+      "travel"
+    ],
+    "a": 1
+  },
+  {
+    "id": "b1-12",
+    "level": 2,
+    "type": "Vocabulary",
+    "cat": "Work",
+    "q": "A promotion means ___.",
+    "opts": [
+      "lose job",
+      "higher position",
+      "fewer hours",
+      "less pay"
+    ],
+    "a": 1
+  },
+  {
+    "id": "b1-13",
+    "level": 2,
+    "type": "Vocabulary",
+    "cat": "Phrasals",
+    "q": "Give up means ___.",
+    "opts": [
+      "donate",
+      "stop trying",
+      "distribute",
+      "surrender"
+    ],
+    "a": 1
+  },
+  {
+    "id": "b1-14",
+    "level": 2,
+    "type": "Vocabulary",
+    "cat": "Work",
+    "q": "Company needs to ___ employees.",
+    "opts": [
+      "fire",
+      "hire",
+      "ignore",
+      "reduce"
+    ],
+    "a": 1
+  },
+  {
+    "id": "b1-15",
+    "level": 2,
+    "type": "Vocabulary",
+    "cat": "Learning",
+    "q": "I need to ___ my English.",
+    "opts": [
+      "improve",
+      "decrease",
+      "forget",
+      "ignore"
+    ],
+    "a": 0
+  },
+  {
+    "id": "b1-16",
+    "level": 2,
+    "type": "Vocabulary",
+    "cat": "Feelings",
+    "q": "She is ___ about the trip.",
+    "opts": [
+      "excited",
+      "exciting",
+      "excitement",
+      "excite"
+    ],
+    "a": 0
+  },
+  {
+    "id": "b1-17",
+    "level": 2,
+    "type": "Vocabulary",
+    "cat": "Business",
+    "q": "Meeting was ___ until next week.",
+    "opts": [
+      "cancelled",
+      "postponed",
+      "finished",
+      "started"
+    ],
+    "a": 1
+  },
+  {
+    "id": "b1-18",
+    "level": 2,
+    "type": "Vocabulary",
+    "cat": "Finance",
+    "q": "He has ___ in the stock market.",
+    "opts": [
+      "experience",
+      "knowledge",
+      "investment",
+      "practice"
+    ],
+    "a": 2
+  },
+  {
+    "id": "b1-19",
+    "level": 2,
+    "type": "Reading",
+    "cat": "Comprehension",
+    "q": "John saved months, booked flight, felt nervous. Why nervous?",
+    "opts": [
+      "Lost money",
+      "Traveling alone",
+      "Never flew",
+      "Not stated"
+    ],
+    "a": 3
+  },
+  {
+    "id": "b2-1",
+    "level": 3,
+    "type": "Grammar",
+    "cat": "Passive",
+    "q": "The report ___ yesterday.",
+    "opts": [
+      "wrote",
+      "was written",
+      "has written",
+      "is writing"
+    ],
+    "a": 1
+  },
+  {
+    "id": "b2-2",
+    "level": 3,
+    "type": "Grammar",
+    "cat": "Conditionals",
+    "q": "Had I known, I ___ differently.",
+    "opts": [
+      "would act",
+      "would have acted",
+      "will act",
+      "acted"
+    ],
+    "a": 1
+  },
+  {
+    "id": "b2-3",
+    "level": 3,
+    "type": "Grammar",
+    "cat": "Inversion",
+    "q": "Not until she arrived ___ the news.",
+    "opts": [
+      "she heard",
+      "did she hear",
+      "she did hear",
+      "she hears"
+    ],
+    "a": 1
+  },
+  {
+    "id": "b2-4",
+    "level": 3,
+    "type": "Grammar",
+    "cat": "Adjectives",
+    "q": "Most ___ problem we've faced.",
+    "opts": [
+      "challenging",
+      "challenged",
+      "challenge",
+      "challenges"
+    ],
+    "a": 0
+  },
+  {
+    "id": "b2-5",
+    "level": 3,
+    "type": "Grammar",
+    "cat": "Subjunctive",
+    "q": "Essential that every student ___ the rules.",
+    "opts": [
+      "follows",
+      "follow",
+      "following",
+      "followed"
+    ],
+    "a": 1
+  },
+  {
+    "id": "b2-6",
+    "level": 3,
+    "type": "Grammar",
+    "cat": "Vocabulary",
+    "q": "Many factors ___ to the company's success.",
+    "opts": [
+      "contribute",
+      "attribute",
+      "distribute",
+      "tribute"
+    ],
+    "a": 0
+  },
+  {
+    "id": "b2-7",
+    "level": 3,
+    "type": "Grammar",
+    "cat": "Passive",
+    "q": "The phenomenon ___ by researchers.",
+    "opts": [
+      "has studied",
+      "has been studied",
+      "studied",
+      "was studying"
+    ],
+    "a": 1
+  },
+  {
+    "id": "b2-8",
+    "level": 3,
+    "type": "Grammar",
+    "cat": "Conditionals",
+    "q": "Without her help, we ___ failed.",
+    "opts": [
+      "will have",
+      "would have",
+      "had",
+      "have"
+    ],
+    "a": 1
+  },
+  {
+    "id": "b2-9",
+    "level": 3,
+    "type": "Grammar",
+    "cat": "Subjunctive",
+    "q": "He insisted the meeting ___ postponed.",
+    "opts": [
+      "is",
+      "be",
+      "was",
+      "has been"
+    ],
+    "a": 1
+  },
+  {
+    "id": "b2-10",
+    "level": 3,
+    "type": "Vocabulary",
+    "cat": "Academic",
+    "q": "Results were ___ \u2014 unexplained.",
+    "opts": [
+      "inconclusive",
+      "conclusive",
+      "decided",
+      "determined"
+    ],
+    "a": 0
+  },
+  {
+    "id": "b2-11",
+    "level": 3,
+    "type": "Vocabulary",
+    "cat": "Business",
+    "q": "Company's ___ increased this quarter.",
+    "opts": [
+      "revenue",
+      "venue",
+      "adventure",
+      "inventory"
+    ],
+    "a": 0
+  },
+  {
+    "id": "b2-12",
+    "level": 3,
+    "type": "Vocabulary",
+    "cat": "Collocations",
+    "q": "Documentary ___ light on the issue.",
+    "opts": [
+      "shed",
+      "threw",
+      "gave",
+      "made"
+    ],
+    "a": 0
+  },
+  {
+    "id": "b2-13",
+    "level": 3,
+    "type": "Vocabulary",
+    "cat": "Business",
+    "q": "Agreement was ___ by both parties.",
+    "opts": [
+      "signed",
+      "ignored",
+      "delayed",
+      "rejected"
+    ],
+    "a": 0
+  },
+  {
+    "id": "b2-14",
+    "level": 3,
+    "type": "Vocabulary",
+    "cat": "Academic",
+    "q": "We must ___ the problem now.",
+    "opts": [
+      "address",
+      "ignore",
+      "postpone",
+      "forget"
+    ],
+    "a": 0
+  },
+  {
+    "id": "b2-15",
+    "level": 3,
+    "type": "Vocabulary",
+    "cat": "Phrasals",
+    "q": "Research ___ new possibilities.",
+    "opts": [
+      "opened up",
+      "closed off",
+      "ran out",
+      "gave away"
+    ],
+    "a": 0
+  },
+  {
+    "id": "b2-16",
+    "level": 3,
+    "type": "Reading",
+    "cat": "Comprehension",
+    "q": "Team persevered despite setbacks. Meaning?",
+    "opts": [
+      "Gave up",
+      "Continued despite",
+      "Started late",
+      "Changed plans"
+    ],
+    "a": 1
+  },
+  {
+    "id": "c1-1",
+    "level": 4,
+    "type": "Grammar",
+    "cat": "Inversion",
+    "q": "___ had she finished when the phone rang.",
+    "opts": [
+      "No sooner",
+      "Not only",
+      "Hardly",
+      "Never"
+    ],
+    "a": 2
+  },
+  {
+    "id": "c1-2",
+    "level": 4,
+    "type": "Grammar",
+    "cat": "Subjunctive",
+    "q": "Imperative that he ___ the report today.",
+    "opts": [
+      "submits",
+      "submit",
+      "submitted",
+      "submitting"
+    ],
+    "a": 1
+  },
+  {
+    "id": "c1-3",
+    "level": 4,
+    "type": "Grammar",
+    "cat": "Compounds",
+    "q": "The longer you wait, ___ it becomes.",
+    "opts": [
+      "the harder",
+      "harder",
+      "more hard",
+      "the more hard"
+    ],
+    "a": 0
+  },
+  {
+    "id": "c1-4",
+    "level": 4,
+    "type": "Grammar",
+    "cat": "Conditionals",
+    "q": "Without funding the project ___.",
+    "opts": [
+      "would fail",
+      "would have failed",
+      "failed",
+      "will fail"
+    ],
+    "a": 1
+  },
+  {
+    "id": "c1-5",
+    "level": 4,
+    "type": "Grammar",
+    "cat": "Relatives",
+    "q": "Author ___ books are bestsellers.",
+    "opts": [
+      "which",
+      "who",
+      "whose",
+      "whom"
+    ],
+    "a": 2
+  },
+  {
+    "id": "c1-6",
+    "level": 4,
+    "type": "Grammar",
+    "cat": "Inversion",
+    "q": "Seldom ___ such dedication.",
+    "opts": [
+      "I have seen",
+      "have I seen",
+      "I saw",
+      "I see"
+    ],
+    "a": 1
+  },
+  {
+    "id": "c1-7",
+    "level": 4,
+    "type": "Grammar",
+    "cat": "Correlatives",
+    "q": "Not only did she finish, ___ she broke the record.",
+    "opts": [
+      "but also",
+      "and also",
+      "also",
+      "but"
+    ],
+    "a": 0
+  },
+  {
+    "id": "c1-8",
+    "level": 4,
+    "type": "Vocabulary",
+    "cat": "Nuance",
+    "q": "Ubiquitous means ___.",
+    "opts": [
+      "rare",
+      "found everywhere",
+      "expensive",
+      "unique"
+    ],
+    "a": 1
+  },
+  {
+    "id": "c1-9",
+    "level": 4,
+    "type": "Vocabulary",
+    "cat": "Academic",
+    "q": "Compelling and ___ argument.",
+    "opts": [
+      "persuasive",
+      "persuaded",
+      "persuading",
+      "persuasion"
+    ],
+    "a": 0
+  },
+  {
+    "id": "c1-10",
+    "level": 4,
+    "type": "Vocabulary",
+    "cat": "Skill",
+    "q": "She navigated the situation with ___.",
+    "opts": [
+      "finesse",
+      "force",
+      "fear",
+      "fancy"
+    ],
+    "a": 0
+  },
+  {
+    "id": "c1-11",
+    "level": 4,
+    "type": "Vocabulary",
+    "cat": "Academic",
+    "q": "Study ___ a correlation.",
+    "opts": [
+      "established",
+      "created",
+      "built",
+      "founded"
+    ],
+    "a": 0
+  },
+  {
+    "id": "c1-12",
+    "level": 4,
+    "type": "Vocabulary",
+    "cat": "Academic",
+    "q": "Policy has far-reaching ___.",
+    "opts": [
+      "implications",
+      "implied",
+      "implies",
+      "implication"
+    ],
+    "a": 0
+  },
+  {
+    "id": "c1-13",
+    "level": 4,
+    "type": "Vocabulary",
+    "cat": "Nuance",
+    "q": "His remarks were ___ and inappropriate.",
+    "opts": [
+      "tactless",
+      "tactful",
+      "tactic",
+      "tactile"
+    ],
+    "a": 0
+  },
+  {
+    "id": "c1-14",
+    "level": 4,
+    "type": "Reading",
+    "cat": "Comprehension",
+    "q": "Ubiquitous coffee shops means they are ___.",
+    "opts": [
+      "very few",
+      "everywhere",
+      "expensive",
+      "closed"
+    ],
+    "a": 1
+  },
+  {
+    "id": "c2-1",
+    "level": 5,
+    "type": "Grammar",
+    "cat": "Conditionals",
+    "q": "Without her, it ___ catastrophic.",
+    "opts": [
+      "would become",
+      "would have become",
+      "became",
+      "will become"
+    ],
+    "a": 1
+  },
+  {
+    "id": "c2-2",
+    "level": 5,
+    "type": "Grammar",
+    "cat": "Inversion",
+    "q": "Never ___ such a phenomenon.",
+    "opts": [
+      "we witnessed",
+      "have we witnessed",
+      "we have witnessed",
+      "we witness"
+    ],
+    "a": 1
+  },
+  {
+    "id": "c2-3",
+    "level": 5,
+    "type": "Vocabulary",
+    "cat": "Idioms",
+    "q": "Pull out all the stops means ___.",
+    "opts": [
+      "remove obstacles",
+      "make every effort",
+      "stop completely",
+      "cancel plans"
+    ],
+    "a": 1
+  },
+  {
+    "id": "c2-4",
+    "level": 5,
+    "type": "Vocabulary",
+    "cat": "Precision",
+    "q": "Ephemeral means ___.",
+    "opts": [
+      "lasting long",
+      "lasting short",
+      "very large",
+      "very small"
+    ],
+    "a": 1
+  },
+  {
+    "id": "c2-5",
+    "level": 5,
+    "type": "Vocabulary",
+    "cat": "Precision",
+    "q": "Verbose means ___.",
+    "opts": [
+      "concise",
+      "wordy",
+      "simple",
+      "poetic"
+    ],
+    "a": 1
+  },
+  {
+    "id": "c2-6",
+    "level": 5,
+    "type": "Vocabulary",
+    "cat": "Precision",
+    "q": "Cogent means ___.",
+    "opts": [
+      "convincing",
+      "confusing",
+      "contradictory",
+      "convoluted"
+    ],
+    "a": 0
+  },
+  {
+    "id": "c2-7",
+    "level": 5,
+    "type": "Vocabulary",
+    "cat": "Precision",
+    "q": "Nonplussed means ___.",
+    "opts": [
+      "impressed",
+      "confused",
+      "relaxed",
+      "determined"
+    ],
+    "a": 1
+  },
+  {
+    "id": "c2-8",
+    "level": 5,
+    "type": "Vocabulary",
+    "cat": "Precision",
+    "q": "Her argument was ___.",
+    "opts": [
+      "lucid",
+      "vague",
+      "unclear",
+      "confusing"
+    ],
+    "a": 0
+  }
 ];
 
 // ─── State ───
@@ -534,7 +1968,8 @@ let state = {
   started: false,
   levelTransitions: [],  // [{from, to, reason}]
   administeredIds: [],
-  questionsSinceReeval: 0,
+  currentBatch: null,
+  batchIndex: 0,
 };
 
 const ESSAY_PROMPTS = [
@@ -543,394 +1978,76 @@ const ESSAY_PROMPTS = [
 ];
 
 // ─── Adaptive Engine ───
-function getAdaptiveNextQuestion() {
-  let targetLevel = state.currentLevel;
-  let lastResponse = state.totalQuestions > 0 ? state.responses[state.responses.length - 1] : null;
-  
-  if (state.totalQuestions > 0 && lastResponse) {
-    if (state.questionsSinceReeval >= REEVAL_INTERVAL) {
-      // Full IRT re-evaluation every 5 questions
-      let iret = eapEstimate(state.responses);
-      state.theta = iret.theta;
-      state.thetaSE = iret.se;
-      state.questionsSinceReeval = 0;
-      targetLevel = levelFromTheta(state.theta);
-    } else if (state.totalQuestions < 5) {
-      // First 5: cautious - no immediate level-up on correct
-      if (lastResponse.correct) {
-        targetLevel = lastResponse.level; // stay at same level
-      } else {
-        targetLevel = Math.max(0, lastResponse.level - 1);
-      }
-    } else {
-      // After 5: step with EAP check
-      if (lastResponse.correct) targetLevel = Math.min(5, lastResponse.level + 1);
-      else targetLevel = Math.max(0, lastResponse.level - 1);
+const BATCH_SIZE = 5;
+const MIN_QUESTIONS = 20;
+const MAX_QUESTIONS = 30;
+const MIN_LEVELS = 4;
+const MIN_PER_LEVEL = 3;
+const THETA_SE_STOP = 0.5;
+
+function eapEstimate(responses) {
+  const G = []; for (let i = -40; i <= 40; i++) G.push(i * 0.1);
+  const D = [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0];
+  let post = G.map(t => {
+    let ll = -0.5 * ((t - 0) / 2.0) ** 2;
+    for (let r of responses) {
+      let b = D[r.level];
+      let p = 1 / (1 + Math.exp(-Math.max(-20, Math.min(20, t - b))));
+      ll += r.correct ? Math.log(Math.max(p, 1e-10)) : Math.log(Math.max(1 - p, 1e-10));
     }
-  }
-  
-  targetLevel = Math.max(0, Math.min(5, targetLevel));
-  
-  let question = pickQuestion(targetLevel);
-  if (!question) {
-    if (state.totalQuestions >= MIN_QUESTIONS) {
-      finishQuestions();
-      return null;
-    }
-    let remaining = QUESTIONS.filter(q => !state.administeredIds.includes(q.id));
-    if (remaining.length === 0) { finishQuestions(); return null; }
-    question = remaining[Math.floor(Math.random() * remaining.length)];
-  }
-  
-  if (targetLevel !== state.currentLevel) {
-    state.levelTransitions.push({ from: state.currentLevel, to: targetLevel, reason: 'adaptive' });
-    state.currentLevel = targetLevel;
-  }
-  
-  return question;
-}
-
-// ─── UI ───
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('screen-' + id).classList.add('active');
-}
-
-function startTest() {
-  state.started = true;
-  state.currentLevel = 1;
-  state.theta = 0;
-  state.thetaSE = THETA_PRIOR_SD;
-  state.responses = [];
-  state.essays = [];
-  state.currentQ = 0;
-  state.totalQuestions = 0;
-  state.levelTransitions = [];
-  state.administeredIds = [];
-  state.questionsSinceReeval = 0;
-  showScreen('question');
-  renderQuestion();
-}
-
-function renderQuestion() {
-  let prevLevel = state.currentLevel;
-  let data;
-  if (state.totalQuestions === 0) {
-    let pool = QUESTIONS.filter(q => q.level === 1);
-    data = pool[Math.floor(Math.random() * pool.length)];
-  } else {
-    data = getAdaptiveNextQuestion();
-  }
-  if (!data) return;
-  
-  state.administeredIds.push(data.id);
-  
-  document.getElementById('qNum').textContent = `Question ${state.currentQ + 1}`;
-  document.getElementById('qLevel').textContent = CEFR[data.level] + ' ' + CAT_NAMES[data.type] || data.type;
-  document.getElementById('qCategory').textContent = data.cat || data.type;
-  
-  let txt = data.q;
-  document.getElementById('qText').textContent = txt;
-  
-  let optsEl = document.getElementById('qOptions');
-  optsEl.innerHTML = '';
-  let letters = ['A','B','C','D'];
-  data.opts.forEach((opt, i) => {
-    let el = document.createElement('button');
-    el.className = 'option';
-    el.innerHTML = `<span class="o-letter">${letters[i]}</span><span class="opt-text">${opt}</span>`;
-    el.onclick = () => selectAnswer(i, data);
-    optsEl.appendChild(el);
+    return Math.exp(ll);
   });
-  
-  state.qStartTime = Date.now();
-  updateProgress();
-  updateTopBar(data.level);
-  
-  // Animate badge on level change
-  if (state.currentLevel !== prevLevel) {
-    let badge = document.getElementById('topLevel');
-    badge.classList.remove('badge-pulse');
-    // Force reflow
-    void badge.offsetWidth;
-    badge.classList.add('badge-pulse');
-    updateTopBar(state.currentLevel);
-  }
+  let total = post.reduce((a,b) => a+b, 0);
+  if (total === 0) return {theta:0, se:2.0};
+  post = post.map(p => p/total);
+  let theta = 0; for (let i=0; i<G.length; i++) theta += G[i]*post[i];
+  let vr = 0; for (let i=0; i<G.length; i++) vr += post[i]*(G[i]-theta)**2;
+  return {theta:+theta.toFixed(2), se:+Math.sqrt(Math.max(vr,0.01)).toFixed(3)};
 }
 
-let CAT_NAMES = {Grammar:'Grammar',Vocabulary:'Vocab',Reading:'Reading'};
+function levelFromTheta(t) {
+  t = Math.max(-2.5, Math.min(3.5, t));
+  if (t < -1.3) return 0; if (t < -0.3) return 1;
+  if (t < 0.5) return 2; if (t < 1.3) return 3;
+  if (t < 2.2) return 4; return 5;
+}
 
-function selectAnswer(idx, data) {
-  let opts = document.querySelectorAll('.option');
-  opts.forEach(o => o.disabled = true);
+function planBatch() {
+  let used = new Set(state.administeredIds);
+  let counts = {}; for (let l=0; l<6; l++) counts[l] = 0;
+  state.responses.forEach(r => counts[r.level]++);
   
-  let time = (Date.now() - state.qStartTime) / 1000;
-  let correct = idx === data.a;
-  
-  // Mark only the correct answer green
-  opts.forEach((o, i) => {
-    if(i === data.a) o.classList.add('correct');
-    if(i === idx) o.classList.add('selected');
-  });
-  
-  state.responses.push({
-    questionId: data.id,
-    level: data.level,
-    type: data.type,
-    correct: correct,
-    time: Math.round(time * 10) / 10,
-    userAnswer: idx,
-    correctAnswer: data.a,
-    levelLabel: CEFR[data.level]
-  });
-  
-  state.currentQ++;
-  state.totalQuestions = state.currentQ;
-  state.questionsSinceReeval++;
-  
-  // Update IRT estimate after each response
   let iret = eapEstimate(state.responses);
-  state.theta = iret.theta;
-  state.thetaSE = iret.se;
+  state.theta = iret.theta; state.thetaSE = iret.se;
+  let target = levelFromTheta(state.theta);
   
-  updateTopBar(data.level);
-  
-  // Auto-advance after brief pause
-  let delay = correct ? 400 : 800;
-  setTimeout(nextQuestion, delay);
-}
-
-function nextQuestion() {
-  // CAT stopping rules
-  if (state.currentQ >= MAX_QUESTIONS) {
-    finishQuestions();
-    return;
-  }
-  if (state.currentQ >= MIN_QUESTIONS && state.thetaSE <= THETA_SE_STOP) {
-    finishQuestions();
-    return;
-  }
-  renderQuestion();
-}
-
-function finishQuestions() {
-  showScreen('essay');
-  renderEssays();
-}
-
-function renderEssays() {
-  let el = document.getElementById('essaySection');
-  el.innerHTML = '';
-  
-  ESSAY_PROMPTS.forEach((prompt, i) => {
-    let div = document.createElement('div');
-    div.innerHTML = `
-      <h3>Essay ${i + 1}</h3>
-      <div class="prompt">${prompt}</div>
-      <textarea id="essay-${i}" placeholder="Write your essay here... (or click Skip below)"></textarea>
-      <div class="essay-actions">
-        <button class="btn-primary" onclick="saveEssay(${i})">✓ Save & Continue</button>
-        <button class="btn-secondary" onclick="skipEssay(${i})">Skip →</button>
-      </div>
-    `;
-    el.appendChild(div);
-  });
-  
-  // If both essays are skipped already, show result button
-  let resultBtn = document.createElement('div');
-  resultBtn.style.marginTop = '16px';
-  resultBtn.innerHTML = `<button class="btn-primary" style="width:100%" onclick="showResult()">📊 See My Level →</button>`;
-  el.appendChild(resultBtn);
-}
-
-let essaySkipped = [false, false];
-
-function saveEssay(i) {
-  let val = document.getElementById('essay-' + i).value.trim();
-  if(!val) { skipEssay(i); return; }
-  state.essays.push({prompt: ESSAY_PROMPTS[i], text: val, skipped: false});
-  showToast('Essay ' + (i+1) + ' saved ✓');
-  // Disable textarea
-  document.getElementById('essay-' + i).disabled = true;
-}
-
-function skipEssay(i) {
-  essaySkipped[i] = true;
-  state.essays.push({prompt: ESSAY_PROMPTS[i], text: '', skipped: true});
-  showToast('Essay ' + (i+1) + ' skipped');
-  document.getElementById('essay-' + i).disabled = true;
-}
-
-function showResult() {
-  showScreen('result');
-  renderResult();
-}
-
-function renderResult() {
-  // Calculate stats
-  let total = state.responses.length;
-  let correct = state.responses.filter(r => r.correct).length;
-  let acc = total > 0 ? Math.round(correct / total * 100) : 0;
-  let avgTime = total > 0 ? (state.responses.reduce((s, r) => s + r.time, 0) / total) : 0;
-  
-  // Determine level from theta estimate
-  let finalLevel = levelFromTheta(state.theta);
-  finalLevel = Math.max(0, Math.min(5, finalLevel));
-  state.finalLevel = finalLevel;
-  
-  // Stats UI
-  document.getElementById('sCorrect').textContent = correct;
-  document.getElementById('sTotal').textContent = total;
-  document.getElementById('sAccuracy').textContent = acc + '%';
-  document.getElementById('sTime').textContent = avgTime.toFixed(1) + 's';
-  document.getElementById('resultLevel').textContent = CEFR[finalLevel];
-  
-  // CEFR Ladder
-  let ladder = document.getElementById('cefrLadder');
-  ladder.innerHTML = '';
-  for(let l = 0; l <= 5; l++) {
-    let el = document.createElement('div');
-    el.className = 'cefr-rung';
-    if(l < finalLevel) el.classList.add('achieved');
-    else if(l === finalLevel) el.classList.add('current');
-    else if(state.responses.some(r => r.level === l)) el.classList.add('tried');
-    el.textContent = CEFR[l];
-    ladder.appendChild(el);
+  let batch = [];
+  function pick(lvl) {
+    let pool = QUESTIONS.filter(q => q.level === lvl && !used.has(q.id));
+    if (!pool.length) return null;
+    let q = pool[Math.floor(Math.random()*pool.length)];
+    used.add(q.id); return q;
   }
   
-  // Build JSON prompt
-  let prompt = buildPrompt(finalLevel, correct, total, acc, avgTime);
-  document.getElementById('promptOutput').textContent = JSON.stringify(prompt, null, 2);
-  
-  updateProgress(100);
-}
-
-function buildPrompt(level, correct, total, acc, avgTime) {
-  let analysis = {
-    assessment_type: "adaptive_english_level_test",
-    version: "1.0",
-    
-    system_prompt: `You are an expert English language assessor trained on CEFR standards. Analyze the following test results and provide:
-1. The user's estimated CEFR level (A1-C2) with confidence level (HIGH/MEDIUM/LOW)
-2. A breakdown by skill area (Grammar, Vocabulary, Reading)
-3. Specific strengths and weaknesses observed
-4. Personalized recommendations for improvement
-5. If essays were provided, assess them for: Task Response, Coherence & Cohesion, Lexical Resource, Grammatical Range & Accuracy
-
-Base your assessment on the evidence provided. Be specific and constructive.`,
-
-    estimated_level: CEFR[level],
-    cefr_code: level,
-    confidence: total >= 20 ? "HIGH" : (total >= 15 ? "MEDIUM" : "LOW"),
-    
-    stats: {
-      total_questions: total,
-      correct_answers: correct,
-      accuracy_percent: acc,
-      average_response_time_seconds: avgTime,
-    },
-    
-    per_level_breakdown: (() => {
-      let levels = {};
-      for(let l = 0; l <= 5; l++) {
-        let r = state.responses.filter(x => x.level === l);
-        if(r.length > 0) {
-          levels[CEFR[l]] = {
-            questions: r.length,
-            correct: r.filter(x => x.correct).length,
-            accuracy: Math.round(r.filter(x => x.correct).length / r.length * 100) + '%',
-          };
-        }
-      }
-      return levels;
-    })(),
-    
-    all_questions: state.responses.map(r => ({
-      level: r.levelLabel,
-      type: r.type,
-      question_id: r.questionId,
-      correct: r.correct,
-      response_time_s: r.time,
-    })),
-    
-    essays: state.essays.filter(e => !e.skipped).map(e => ({
-      prompt: e.prompt,
-      text: e.text,
-    })),
-    
-    level_transitions: state.levelTransitions,
-    
-    assessment_request: "Based on this data, determine the user's CEFR English level with detailed justification.",
-  };
-  
-  return analysis;
-}
-
-function copyPrompt() {
-  let text = document.getElementById('promptOutput').textContent;
-  navigator.clipboard.writeText(text).then(() => showToast('📋 Copied to clipboard!')).catch(() => {
-    // Fallback
-    let ta = document.createElement('textarea');
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    ta.remove();
-    showToast('📋 Copied!');
-  });
-}
-
-function downloadJSON() {
-  let text = document.getElementById('promptOutput').textContent;
-  let blob = new Blob([text], {type: 'application/json'});
-  let a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'lingoquest-assessment.json';
-  a.click();
-  URL.revokeObjectURL(blob);
-}
-
-function resetTest() {
-  if(confirm('Reset all progress and start over?')) {
-    state = {
-      currentLevel: 1,
-      theta: 0,
-      thetaSE: THETA_PRIOR_SD,
-      totalQuestions: 0,
-      currentQ: 0,
-      responses: [],
-      essays: [],
-      qStartTime: 0,
-      started: false,
-      levelTransitions: [],
-      administeredIds: [],
-      questionsSinceReeval: 0,
-    };
-    essaySkipped = [false, false];
-    document.getElementById('progressFill').style.width = '0%';
-    showScreen('welcome');
+  // 3 from target level
+  for (let i=0; i<3 && batch.length<5; i++) { let q=pick(target); if(q) batch.push(q); }
+  // Fill with underrepresented levels
+  for (let l=0; l<6 && batch.length<5; l++) {
+    if (counts[l] < MIN_PER_LEVEL) { let q=pick(l); if(q) batch.push(q); }
   }
+  // Fill rest from target
+  while (batch.length < 5) { let q=pick(target); if(!q) break; batch.push(q); }
+  // If still empty, pick anything
+  while (batch.length < 5) {
+    for (let l=0; l<6 && batch.length<5; l++) { let q=pick(l); if(q) batch.push(q); }
+  }
+  state.currentBatch = batch;
+  state.batchIndex = 0;
 }
 
-function updateProgress(pct) {
-  let val = pct !== undefined ? pct : Math.round(state.currentQ / MAX_QUESTIONS * 100);
-  document.getElementById('progressFill').style.width = val + '%';
+function getNextQ() {
+  if (!state.currentBatch || state.batchIndex >= state.currentBatch.length) planBatch();
+  if (!state.currentBatch || state.batchIndex >= state.currentBatch.length) return null;
+  return state.currentBatch[state.batchIndex++];
 }
-
-function updateTopBar(level) {
-  let total = state.responses.length;
-  let correct = state.responses.filter(r => r.correct).length;
-  document.getElementById('topScore').textContent = `${correct} / ${total}`;
-  document.getElementById('topLevel').textContent = CEFR[level || state.currentLevel];
-}
-
-function showToast(msg) {
-  let t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.display = 'block';
-  t.style.animation = 'none';
-  setTimeout(() => t.style.display = 'none', 2500);
-}
-</script>
-</body>
-</html>
+>
