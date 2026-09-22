@@ -2262,4 +2262,337 @@ function getNextQ() {
   state.administeredIds.push(scored[idx].id);
   return scored[idx];
 }
->
+>function startTest() {
+  state.started = true;
+  state.currentLevel = 1;
+  state.theta = 0;
+  state.thetaSE = THETA_PRIOR_SD;
+  state.responses = [];
+  state.essays = [];
+  state.currentQ = 0;
+  state.totalQuestions = 0;
+  state.administeredIds = [];
+  state.questionsSinceReeval = 0;
+  showScreen('question');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  let prevLevel = state.currentLevel;
+  let data;
+  if (state.totalQuestions === 0) {
+    let pool = QUESTIONS.filter(q => q.level === 1);
+    data = pool[Math.floor(Math.random() * pool.length)];
+  } else {
+  }
+  if (!data) return;
+  
+  state.administeredIds.push(data.id);
+  
+  document.getElementById('qNum').textContent = `Question ${state.currentQ + 1}`;
+  document.getElementById('qLevel').textContent = CEFR[data.level] + ' ' + CAT_NAMES[data.type] || data.type;
+  document.getElementById('qCategory').textContent = data.cat || data.type;
+  
+  let txt = data.q;
+  document.getElementById('qText').textContent = txt;
+  
+  let optsEl = document.getElementById('qOptions');
+  optsEl.innerHTML = '';
+  let letters = ['A','B','C','D'];
+  data.opts.forEach((opt, i) => {
+    let el = document.createElement('button');
+    el.className = 'option';
+    el.innerHTML = `<span class="o-letter">${letters[i]}</span><span class="opt-text">${opt}</span>`;
+    el.onclick = () => selectAnswer(i, data);
+    optsEl.appendChild(el);
+  });
+  
+  state.qStartTime = Date.now();
+  updateProgress();
+  updateTopBar(data.level);
+  
+  // Animate badge on level change
+  if (state.currentLevel !== prevLevel) {
+    let badge = document.getElementById('topLevel');
+    badge.classList.remove('badge-pulse');
+    // Force reflow
+    void badge.offsetWidth;
+    badge.classList.add('badge-pulse');
+    updateTopBar(state.currentLevel);
+  }
+}
+
+let CAT_NAMES = {Grammar:'Grammar',Vocabulary:'Vocab',Reading:'Reading'};
+
+function selectAnswer(idx, data) {
+  let opts = document.querySelectorAll('.option');
+  opts.forEach(o => o.disabled = true);
+  
+  let time = (Date.now() - state.qStartTime) / 1000;
+  let correct = idx === data.a;
+  
+  // Mark only the correct answer green
+  opts.forEach((o, i) => {
+    if(i === data.a) o.classList.add('correct');
+    if(i === idx) o.classList.add('selected');
+  });
+  
+  state.responses.push({
+    questionId: data.id,
+    level: data.level,
+    type: data.type,
+    correct: correct,
+    time: Math.round(time * 10) / 10,
+    userAnswer: idx,
+    correctAnswer: data.a,
+    levelLabel: CEFR[data.level]
+  });
+  
+  state.currentQ++;
+  state.totalQuestions = state.currentQ;
+  state.questionsSinceReeval++;
+  
+  // Update IRT estimate after each response
+  let iret = eapEstimate(state.responses);
+  state.theta = iret.theta;
+  state.thetaSE = iret.se;
+  
+  updateTopBar(data.level);
+  
+  // Auto-advance after brief pause
+  let delay = correct ? 400 : 800;
+  setTimeout(nextQuestion, delay);
+}
+
+function nextQuestion() {
+  // CAT stopping rules
+  if (state.currentQ >= MAX_QUESTIONS) {
+    finishQuestions();
+    return;
+  }
+  if (state.currentQ >= MIN_QUESTIONS && state.thetaSE <= THETA_SE_STOP) {
+    finishQuestions();
+    return;
+  }
+  renderQuestion();
+}
+
+function finishQuestions() {
+  showScreen('essay');
+  renderEssays();
+}
+
+function renderEssays() {
+  let el = document.getElementById('essaySection');
+  el.innerHTML = '';
+  
+  ESSAY_PROMPTS.forEach((prompt, i) => {
+    let div = document.createElement('div');
+    div.innerHTML = `
+      <h3>Essay ${i + 1}</h3>
+      <div class="prompt">${prompt}</div>
+      <textarea id="essay-${i}" placeholder="Write your essay here... (or click Skip below)"></textarea>
+      <div class="essay-actions">
+        <button class="btn-primary" onclick="saveEssay(${i})">✓ Save & Continue</button>
+        <button class="btn-secondary" onclick="skipEssay(${i})">Skip →</button>
+      </div>
+    `;
+    el.appendChild(div);
+  });
+  
+  // If both essays are skipped already, show result button
+  let resultBtn = document.createElement('div');
+  resultBtn.style.marginTop = '16px';
+  resultBtn.innerHTML = `<button class="btn-primary" style="width:100%" onclick="showResult()">📊 See My Level →</button>`;
+  el.appendChild(resultBtn);
+}
+
+let essaySkipped = [false, false];
+
+function saveEssay(i) {
+  let val = document.getElementById('essay-' + i).value.trim();
+  if(!val) { skipEssay(i); return; }
+  state.essays.push({prompt: ESSAY_PROMPTS[i], text: val, skipped: false});
+  showToast('Essay ' + (i+1) + ' saved ✓');
+  // Disable textarea
+  document.getElementById('essay-' + i).disabled = true;
+}
+
+function skipEssay(i) {
+  essaySkipped[i] = true;
+  state.essays.push({prompt: ESSAY_PROMPTS[i], text: '', skipped: true});
+  showToast('Essay ' + (i+1) + ' skipped');
+  document.getElementById('essay-' + i).disabled = true;
+}
+
+function showResult() {
+  showScreen('result');
+  renderResult();
+}
+
+function renderResult() {
+  // Calculate stats
+  let total = state.responses.length;
+  let correct = state.responses.filter(r => r.correct).length;
+  let acc = total > 0 ? Math.round(correct / total * 100) : 0;
+  let avgTime = total > 0 ? (state.responses.reduce((s, r) => s + r.time, 0) / total) : 0;
+  
+  // Determine level from theta estimate
+  let finalLevel = levelFromTheta(state.theta);
+  finalLevel = Math.max(0, Math.min(5, finalLevel));
+  state.finalLevel = finalLevel;
+  
+  // Stats UI
+  document.getElementById('sCorrect').textContent = correct;
+  document.getElementById('sTotal').textContent = total;
+  document.getElementById('sAccuracy').textContent = acc + '%';
+  document.getElementById('sTime').textContent = avgTime.toFixed(1) + 's';
+  document.getElementById('resultLevel').textContent = CEFR[finalLevel];
+  
+  // CEFR Ladder
+  let ladder = document.getElementById('cefrLadder');
+  ladder.innerHTML = '';
+  for(let l = 0; l <= 5; l++) {
+    let el = document.createElement('div');
+    el.className = 'cefr-rung';
+    if(l < finalLevel) el.classList.add('achieved');
+    else if(l === finalLevel) el.classList.add('current');
+    else if(state.responses.some(r => r.level === l)) el.classList.add('tried');
+    el.textContent = CEFR[l];
+    ladder.appendChild(el);
+  }
+  
+  // Build JSON prompt
+  let prompt = buildPrompt(finalLevel, correct, total, acc, avgTime);
+  document.getElementById('promptOutput').textContent = JSON.stringify(prompt, null, 2);
+  
+  updateProgress(100);
+}
+
+function buildPrompt(level, correct, total, acc, avgTime) {
+  let analysis = {
+    assessment_type: "adaptive_english_level_test",
+    version: "1.0",
+    
+    system_prompt: `You are an expert English language assessor trained on CEFR standards. Analyze the following test results and provide:
+1. The user's estimated CEFR level (A1-C2) with confidence level (HIGH/MEDIUM/LOW)
+2. A breakdown by skill area (Grammar, Vocabulary, Reading)
+3. Specific strengths and weaknesses observed
+4. Personalized recommendations for improvement
+5. If essays were provided, assess them for: Task Response, Coherence & Cohesion, Lexical Resource, Grammatical Range & Accuracy
+
+Base your assessment on the evidence provided. Be specific and constructive.`,
+
+    estimated_level: CEFR[level],
+    cefr_code: level,
+    confidence: total >= 20 ? "HIGH" : (total >= 15 ? "MEDIUM" : "LOW"),
+    
+    stats: {
+      total_questions: total,
+      correct_answers: correct,
+      accuracy_percent: acc,
+      average_response_time_seconds: avgTime,
+    },
+    
+    per_level_breakdown: (() => {
+      let levels = {};
+      for(let l = 0; l <= 5; l++) {
+        let r = state.responses.filter(x => x.level === l);
+        if(r.length > 0) {
+          levels[CEFR[l]] = {
+            questions: r.length,
+            correct: r.filter(x => x.correct).length,
+            accuracy: Math.round(r.filter(x => x.correct).length / r.length * 100) + '%',
+          };
+        }
+      }
+      return levels;
+    })(),
+    
+    all_questions: state.responses.map(r => ({
+      level: r.levelLabel,
+      type: r.type,
+      question_id: r.questionId,
+      correct: r.correct,
+      response_time_s: r.time,
+    })),
+    
+    essays: state.essays.filter(e => !e.skipped).map(e => ({
+      prompt: e.prompt,
+      text: e.text,
+    })),
+    
+    
+    assessment_request: "Based on this data, determine the user's CEFR English level with detailed justification.",
+  };
+  
+  return analysis;
+}
+
+function copyPrompt() {
+  let text = document.getElementById('promptOutput').textContent;
+  navigator.clipboard.writeText(text).then(() => showToast('📋 Copied to clipboard!')).catch(() => {
+    // Fallback
+    let ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    showToast('📋 Copied!');
+  });
+}
+
+function downloadJSON() {
+  let text = document.getElementById('promptOutput').textContent;
+  let blob = new Blob([text], {type: 'application/json'});
+  let a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'lingoquest-assessment.json';
+  a.click();
+  URL.revokeObjectURL(blob);
+}
+
+function resetTest() {
+  if(confirm('Reset all progress and start over?')) {
+    state = {
+      currentLevel: 1,
+      theta: 0,
+      thetaSE: THETA_PRIOR_SD,
+      totalQuestions: 0,
+      currentQ: 0,
+      responses: [],
+      essays: [],
+      qStartTime: 0,
+      started: false,
+      administeredIds: [],
+      questionsSinceReeval: 0,
+    };
+    essaySkipped = [false, false];
+    document.getElementById('progressFill').style.width = '0%';
+    showScreen('welcome');
+  }
+}
+
+function updateProgress(pct) {
+  let val = pct !== undefined ? pct : Math.round(state.currentQ / MAX_QUESTIONS * 100);
+  document.getElementById('progressFill').style.width = val + '%';
+}
+
+function updateTopBar(level) {
+  let total = state.responses.length;
+  let correct = state.responses.filter(r => r.correct).length;
+  document.getElementById('topScore').textContent = `${correct} / ${total}`;
+  document.getElementById('topLevel').textContent = CEFR[level || state.currentLevel];
+}
+
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  t.style.animation = 'none';
+  setTimeout(() => t.style.display = 'none', 2500);
+}
+</script>
+</body>
+</html>
