@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#0a0a0f">
+<meta name="theme-color" content="#0a0a12">
 <title>LingoQuest — Adaptive English Level Test</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,92 +14,115 @@
 </head>
 <body>
 
-<div class="app" id="appContainer">
+<!-- ═══ ARIA live region for announcements ═══ -->
+<div class="sr-only" id="ariaLive" aria-live="polite" aria-atomic="true" role="status"></div>
 
-  <!-- Top Bar -->
-  <div class="top-bar">
-    <div class="logo">✦ LingoQuest</div>
-    <div><span class="score-dot" id="topScore">0 / 0</span></div>
-    <div><span class="level-badge" id="topLevel">A2</span></div>
-  </div>
-  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-
-  <div class="main">
-
-    <!-- ═══ Welcome ═══ -->
-    <div class="screen active" id="screen-welcome">
-      <div class="welcome">
-        <div class="hero-icon">🌍</div>
-        <h1>Find Your <span>English Level</span></h1>
-        <p>An adaptive test that finds your real CEFR level — from A1 to C2. Answer ~25 smart questions, write a short essay, and get an AI-ready assessment.</p>
-        <div class="features">
-          <span>🧠 Adaptive</span>
-          <span>⚡ ~15 min</span>
-          <span>📊 CEFR Score</span>
-          <span>✍️ Optional Essay</span>
-        </div>
-        <button class="btn-primary" id="btnStart">Start Test →</button>
-      </div>
-    </div>
-
-    <!-- ═══ Question ═══ -->
-    <div class="screen" id="screen-question">
-      <div class="quest-header">
-        <span class="q-num" id="qNum">1 / 25</span>
-        <span class="q-level" id="qLevel">A2</span>
-      </div>
-      <div class="quest-category" id="qCategory">Grammar</div>
-      <div class="quest-text" id="qText">Loading...</div>
-      <div class="options" id="qOptions"></div>
-    </div>
-
-    <!-- ═══ Essay ═══ -->
-    <div class="screen" id="screen-essay">
-      <div style="text-align:center;margin-bottom:1.5rem">
-        <div style="font-size:2rem;margin-bottom:0.5rem">✍️</div>
-        <h2 style="font-size:1.3rem;font-weight:700">Quick Writing Check</h2>
-        <p style="color:#8a8a9e;font-size:0.85rem;margin-top:4px">Optional — skip if you prefer</p>
-      </div>
-      <div class="essay-section" id="essaySection"></div>
-    </div>
-
-    <!-- ═══ Result ═══ -->
-    <div class="screen" id="screen-result">
-      <div class="result">
-        <div class="result-header">
-          <h2>📊 Your Results</h2>
-          <div class="cefr-ladder" id="cefrLadder"></div>
-          <div style="text-align:center;margin:1rem 0">
-            <div class="est-level" id="resultLevel">B1</div>
-            <p style="color:#8a8a9e;font-size:0.85rem;margin-top:6px">Estimated CEFR Level</p>
-          </div>
-        </div>
-        <div class="stat-grid" id="statGrid">
-          <div class="stat-card"><div class="num" id="sCorrect">0</div><div class="label">Correct</div></div>
-          <div class="stat-card"><div class="num" id="sTotal">0</div><div class="label">Questions</div></div>
-          <div class="stat-card"><div class="num" id="sAccuracy">0%</div><div class="label">Accuracy</div></div>
-          <div class="stat-card"><div class="num" id="sTime">0s</div><div class="label">Avg Time</div></div>
-        </div>
-
-        <h3 style="font-size:0.85rem;font-weight:600;color:#6c6c7e;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">
-          🤖 AI Assessment Prompt
-        </h3>
-        <p style="font-size:0.75rem;color:#6c6c7e;margin-bottom:8px">
-          Copy this JSON and send it to any AI to get a detailed level assessment.
-        </p>
-        <div class="prompt-output" id="promptOutput"></div>
-        <div class="result-actions">
-          <button class="btn-primary" id="btnCopy">📋 Copy Prompt</button>
-          <button class="btn-secondary" id="btnDownload">⬇️ Download JSON</button>
-          <button class="btn-secondary" id="btnRestart">🔄 Retake Test</button>
-        </div>
-      </div>
-    </div>
-
-  </div>
+<!-- ═══ Decorative ambient layers ═══ -->
+<div class="ambient" aria-hidden="true">
+  <div class="glow-orb glow-orb--1"></div>
+  <div class="glow-orb glow-orb--2"></div>
+  <div class="glow-orb glow-orb--3"></div>
+  <div class="particles" aria-hidden="true"></div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- ═══ App ═══ -->
+<div class="app" id="appContainer">
+
+  <!-- Top Bar (banner landmark) -->
+  <header class="top-bar" role="banner" aria-label="Test header">
+    <div class="logo" aria-label="LingoQuest">✦ LingoQuest</div>
+    <div><span class="score-dot" id="topScore" aria-label="Score">0 / 0</span></div>
+    <div><span class="level-badge" id="topLevel" aria-label="Current level">A2</span></div>
+  </header>
+
+  <!-- Progress indicator -->
+  <div class="progress-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Test progress">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <main class="main" role="main">
+
+    <!-- ═══ Welcome ═══ -->
+    <section class="screen active" id="screen-welcome" aria-label="Welcome screen">
+      <div class="welcome">
+        <div class="hero-icon" aria-hidden="true">🌍</div>
+        <h1>Find Your <span>English Level</span></h1>
+        <p>An adaptive test that finds your real CEFR level — from A1 to C2. Answer ~25 smart questions, write a short essay, and get an AI-ready assessment.</p>
+        <div class="features" role="list" aria-label="Test features">
+          <span role="listitem">🧠 Adaptive</span>
+          <span role="listitem">⚡ ~15 min</span>
+          <span role="listitem">📊 CEFR Score</span>
+          <span role="listitem">✍️ Optional Essay</span>
+        </div>
+        <button class="btn-primary" id="btnStart" type="button">Start Test →</button>
+      </div>
+    </section>
+
+    <!-- ═══ Question ═══ -->
+    <section class="screen" id="screen-question" aria-label="Question screen">
+      <div class="quest-header">
+        <span class="q-num" id="qNum" aria-label="Question number">1 / 25</span>
+        <span class="q-level" id="qLevel" aria-label="Question level">A2</span>
+      </div>
+      <div class="quest-category" id="qCategory" aria-label="Category">Grammar</div>
+      <div class="quest-text" id="qText" role="heading" aria-level="2">Loading...</div>
+      <div class="options" id="qOptions" role="group" aria-label="Answer options"></div>
+      <!-- Skeleton placeholder shown during loading -->
+      <div class="skeleton" id="qSkeleton" aria-hidden="true" aria-busy="false">
+        <div class="skeleton-line skeleton-line--short"></div>
+        <div class="skeleton-line skeleton-line--medium"></div>
+        <div class="skeleton-line skeleton-line--long"></div>
+        <div class="skeleton-option"></div>
+        <div class="skeleton-option"></div>
+        <div class="skeleton-option"></div>
+        <div class="skeleton-option"></div>
+      </div>
+    </section>
+
+    <!-- ═══ Essay ═══ -->
+    <section class="screen" id="screen-essay" aria-label="Essay screen">
+      <div class="essay-intro">
+        <div class="essay-intro-icon" aria-hidden="true">✍️</div>
+        <h2 id="essayHeading">Quick Writing Check</h2>
+        <p class="essay-intro-sub">Optional — skip if you prefer</p>
+      </div>
+      <div class="essay-section" id="essaySection" aria-labelledby="essayHeading"></div>
+    </section>
+
+    <!-- ═══ Result ═══ -->
+    <section class="screen" id="screen-result" aria-label="Results screen">
+      <div class="result">
+        <header class="result-header">
+          <h2>📊 Your Results</h2>
+          <nav class="cefr-ladder" id="cefrLadder" aria-label="CEFR level ladder" role="list"></nav>
+          <div class="result-level-group">
+            <div class="est-level" id="resultLevel">B1</div>
+            <p class="result-level-label">Estimated CEFR Level</p>
+          </div>
+        </header>
+        <div class="stat-grid" id="statGrid" aria-label="Test statistics" role="list">
+          <div class="stat-card" role="listitem"><div class="num" id="sCorrect">0</div><div class="label">Correct</div></div>
+          <div class="stat-card" role="listitem"><div class="num" id="sTotal">0</div><div class="label">Questions</div></div>
+          <div class="stat-card" role="listitem"><div class="num" id="sAccuracy">0%</div><div class="label">Accuracy</div></div>
+          <div class="stat-card" role="listitem"><div class="num" id="sTime">0s</div><div class="label">Avg Time</div></div>
+        </div>
+
+        <h3 class="result-section-heading">🤖 AI Assessment Prompt</h3>
+        <p class="result-section-desc">Copy this JSON and send it to any AI to get a detailed level assessment.</p>
+        <div class="prompt-output" id="promptOutput" role="region" aria-label="Assessment JSON" tabindex="0"></div>
+        <div class="result-actions">
+          <button class="btn-primary" id="btnCopy" type="button">📋 Copy Prompt</button>
+          <button class="btn-secondary" id="btnDownload" type="button">⬇️ Download JSON</button>
+          <button class="btn-secondary" id="btnRestart" type="button">🔄 Retake Test</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ═══ Toast ═══ -->
+<div class="toast" id="toast" role="alert" aria-live="assertive"></div>
 
 <script type="module" src="js/app.js"></script>
 </body>

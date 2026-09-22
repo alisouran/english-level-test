@@ -9,7 +9,6 @@ export const state = {
   prevLevel: 0,
   currentQ: null,
   currentIdx: 0,
-  questionCount: 0,
   adminIds: new Set(),
   responses: [],          // {qId, correct, time, b}
   essays: [],             // [{prompt, text, skipped}]
@@ -28,7 +27,6 @@ export function resetState() {
   state.prevLevel = 0;
   state.currentQ = null;
   state.currentIdx = 0;
-  state.questionCount = 0;
   state.adminIds = new Set();
   state.responses = [];
   state.essays = [];

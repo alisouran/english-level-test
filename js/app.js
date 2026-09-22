@@ -1,26 +1,38 @@
-/* ═══════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════
    LingoQuest — Entry Point & Event Wiring
-   ═══════════════════════════════════════════ */
+   Skeleton loading, confetti, focus, input locking
+   ═══════════════════════════════════════════════════════ */
 
 import { QUESTIONS } from "./questions.js";
 import { state, resetState, recordResponse, recordEssay } from "./state.js";
 import { eapEstimate, levelFromTheta, pickQuestion, shouldStop } from "./engine.js";
 import {
   showScreen, updateTopBar, renderQuestion, showAnswerFeedback,
-  renderEssay, renderResult, showToast, getEssayPrompts
+  renderEssay, renderResult, showToast, getEssayPrompts,
+  showSkeleton, fireConfetti, resetConfetti, announce
 } from "./ui.js";
+
+let inputLocked = false;
+let essayPhase = 0;
 
 /* ── Start test ────────────────────────── */
 function startTest() {
   resetState();
+  resetConfetti();
   state.phase = "testing";
   state.testStartTime = Date.now();
-  state.prevLevel = 2;
-  state.level = 2;
+  state.prevLevel = 0;
+  state.level = 0;
 
-  loadNextQuestion();
+  showSkeleton(true);
   showScreen("screen-question");
   updateTopBar();
+
+  // Short delay before showing first question (skeleton visible)
+  setTimeout(() => {
+    loadNextQuestion();
+    showSkeleton(false);
+  }, 400);
 }
 
 /* ── Load next question (adaptive) ─────── */
@@ -35,8 +47,9 @@ function loadNextQuestion() {
   state.adminIds.add(q.id);
   state.lastQTime = Date.now();
 
-  renderQuestion(q, state.totalQuestions + 1, state.totalQuestions + 1);
+  renderQuestion(q, state.totalQuestions + 1);
   bindOptionListeners();
+  inputLocked = false;
 }
 
 /* ── Bind option listeners ─────────────── */
@@ -48,10 +61,13 @@ function bindOptionListeners() {
 
 /* ── Option click handler ──────────────── */
 function onOptionClick(e) {
+  if (inputLocked) return;
   const btn = e.currentTarget;
   const idx = parseInt(btn.dataset.index, 10);
   const q = state.currentQ;
   if (!q) return;
+
+  inputLocked = true;
 
   const correct = idx === q.a;
   const b = q.level !== undefined
@@ -64,13 +80,23 @@ function onOptionClick(e) {
   state.theta = eapEstimate(state.responses);
   state.prevLevel = state.level;
   state.level = levelFromTheta(state.theta);
+
+  // Update qNum for the just-answered question
+  document.getElementById("qNum").textContent = state.totalQuestions + " / " + Math.min(state.totalQuestions + 5, 40);
+
   updateTopBar();
 
+  // Show skeleton during transition
   setTimeout(() => {
     if (shouldStop()) {
       finishTest();
     } else {
-      loadNextQuestion();
+      showSkeleton(true);
+      // Brief skeleton display then next question
+      setTimeout(() => {
+        loadNextQuestion();
+        showSkeleton(false);
+      }, 300);
     }
   }, 600);
 }
@@ -85,6 +111,7 @@ function finishTest() {
   showScreen("screen-essay");
   bindEssayListeners();
   updateTopBar();
+  announce("Essay section. " + getEssayPrompts().length + " optional writing prompts.");
 }
 
 /* ── Bind essay listeners ──────────────── */
@@ -112,16 +139,17 @@ function onSkipEssay() {
   advanceEssay();
 }
 
-let essayPhase = 0;
 function advanceEssay() {
   essayPhase++;
   const prompts = getEssayPrompts();
   if (essayPhase < prompts.length) {
     renderEssay(essayPhase);
     bindEssayListeners();
+    announce("Essay " + (essayPhase + 1) + " of " + prompts.length);
   } else {
     essayPhase = 0;
-    showResults();
+    // Brief transition before showing results
+    setTimeout(showResults, 300);
   }
 }
 
@@ -132,6 +160,9 @@ function showResults() {
   showScreen("screen-result");
   updateTopBar();
   bindResultListeners();
+  announce("Test complete. Estimated level: " + (state.level !== undefined ? ["A1","A2","B1","B2","C1","C2"][state.level] : ""));
+  // Fire confetti on result reveal
+  setTimeout(() => fireConfetti(), 500);
 }
 
 /* ── Bind result listeners ─────────────── */
@@ -144,8 +175,11 @@ function bindResultListeners() {
     restart.addEventListener("click", () => {
       showScreen("screen-welcome");
       resetState();
+      resetConfetti();
       essayPhase = 0;
+      inputLocked = false;
       updateTopBar();
+      announce("Returned to welcome screen");
     });
   }
 
@@ -193,4 +227,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("QUESTIONS not loaded");
     showToast("Error: Question bank not loaded");
   }
+
+  // Announce app ready
+  announce("LingoQuest adaptive English level test loaded. Press Start Test to begin.");
 });
