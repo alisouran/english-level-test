@@ -4,7 +4,7 @@
    CEFR ladder redesign, ARIA updates, focus management
    ═══════════════════════════════════════════════════════ */
 
-import { CEFR, ITEM_DIFFICULTY, getItemDifficulty } from "./questions.js";
+import { CEFR, ITEM_DIFFICULTY, getItemDifficulty, QUESTIONS } from "./questions.js";
 import { state } from "./state.js";
 
 /* ── ARIA live region helper ──────────── */
@@ -261,6 +261,14 @@ function renderPromptJSON(correct, total, accuracy, avgTime) {
     },
     responses: state.responses.map(r => ({
       question_id: r.qId,
+      question_text: r.questionText || "",
+      options: r.options || [],
+      selected_answer: r.selectedAnswer !== undefined ? r.selectedAnswer : -1,
+      correct_answer: (() => {
+        // Look up the correct answer index from the question data
+        const question = QUESTIONS.find(q => q.id === r.qId);
+        return question ? question.a : -1;
+      })(),
       correct: r.correct,
       difficulty: getItemDifficulty(r.qId),
       time_taken: r.time.toFixed(1) + "s",

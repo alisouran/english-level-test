@@ -38,10 +38,10 @@ export function resetState() {
   state.testStartTime = 0;
 }
 
-export function recordResponse(qId, correct, b) {
+export function recordResponse(qId, correct, b, questionText, options, selectedAnswer) {
   const now = Date.now();
   const timeTaken = state.lastQTime ? (now - state.lastQTime) / 1000 : 0;
-  state.responses.push({qId, correct, time: timeTaken, b});
+  state.responses.push({qId, correct, time: timeTaken, b, questionText, options, selectedAnswer});
   if (correct) state.totalCorrect++;
   state.totalQuestions++;
   state.perQTime = state.perQTime

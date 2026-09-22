@@ -74,7 +74,7 @@ function onOptionClick(e) {
     ? [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0][Math.min(5, q.level)]
     : 0;
 
-  recordResponse(q.id, correct, b);
+  recordResponse(q.id, correct, b, q.q, q.opts, idx);
   showAnswerFeedback(idx, q.a);
 
   state.theta = eapEstimate(state.responses);
