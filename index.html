@@ -2211,8 +2211,6 @@ let state = {
   qStartTime: 0,
   started: false,
   administeredIds: [],
-  currentBatch: null,
-  batchIndex: 0,
 };
 
 const ESSAY_PROMPTS = [
@@ -2221,7 +2219,6 @@ const ESSAY_PROMPTS = [
 ];
 
 // ─── Adaptive Engine ───
-const BATCH_SIZE = 5;
 const MIN_QUESTIONS = 20;
 const MAX_QUESTIONS = 30;
 const MIN_LEVELS = 4;
@@ -2255,52 +2252,56 @@ function levelFromTheta(t) {
   if (t < 2.2) return 4; return 5;
 }
 
-function planBatch() {
-  let used = new Set(state.administeredIds);
+function getNextQ() {
+  // Re-estimate theta
+  if (state.responses.length > 0) {
+    let iret = eapEstimate(state.responses);
+    state.theta = iret.theta; state.thetaSE = iret.se;
+  }
+  
+  // Determine proven target level
   let counts = {}; let corrects = {};
   for (let l=0; l<6; l++) { counts[l]=0; corrects[l]=0; }
   state.responses.forEach(r => { counts[r.level]++; if(r.correct) corrects[r.level]++; });
   
-  let iret = eapEstimate(state.responses);
-  state.theta = iret.theta; state.thetaSE = iret.se;
-  let thetaLevel = levelFromTheta(state.theta);
-  
-  // Safe target: only levels where user has proven ability
-  // (≥2 questions with ≥50% accuracy)
   let target = 0;
   for (let l=0; l<6; l++) {
     if (counts[l] >= 3 && corrects[l]/counts[l] >= 0.5) target = l;
   }
-  // If nothing proven yet, start at A2
   if (target === 0 && counts[0] < 3) target = 1;
-  target = Math.max(0, Math.min(5, target));
+  state.currentLevel = Math.max(0, Math.min(5, target));
   
-  let batch = [];
-  function pick(lvl) {
-    let pool = QUESTIONS.filter(q => q.level === lvl && !used.has(q.id));
-    if (!pool.length) return null;
-    let q = pool[Math.floor(Math.random()*pool.length)];
-    used.add(q.id); return q;
+  // Check underrepresented levels first
+  let pickLevel = state.currentLevel;
+  for (let l=0; l<6; l++) {
+    if (counts[l] < MIN_PER_LEVEL) { pickLevel = l; break; }
   }
   
-  // 3 from target level
-  for (let i=0; i<3 && batch.length<5; i++) { let q=pick(target); if(q) batch.push(q); }
-  // Fill with underrepresented levels (lowest ones first)
-  for (let l=0; l<6 && batch.length<5; l++) {
-    if (counts[l] < MIN_PER_LEVEL) { let q=pick(l); if(q) batch.push(q); }
+  // Pick best question at pickLevel using Fisher Information
+  const D = [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0];
+  let used = new Set(state.administeredIds);
+  let pool = QUESTIONS.filter(q => q.level === pickLevel && !used.has(q.id));
+  
+  // Fallback: spiral outward if no questions at pickLevel
+  if (pool.length === 0) {
+    for (let d = 0; d <= 5; d++) {
+      let sign = d % 2 === 0 ? d/2 : -(Math.ceil(d/2));
+      let lvl = pickLevel + sign;
+      if (lvl < 0 || lvl > 5) continue;
+      pool = QUESTIONS.filter(q => q.level === lvl && !used.has(q.id));
+      if (pool.length > 0) break;
+    }
   }
-  // Fill rest from target
-  while (batch.length < 5) { let q=pick(target); if(!q) break; batch.push(q); }
-  while (batch.length < 5) {
-    for (let l=0; l<6 && batch.length<5; l++) { let q=pick(l); if(q) batch.push(q); }
-  }
-  state.currentBatch = batch;
-  state.batchIndex = 0;
-}
-
-function getNextQ() {
-  if (!state.currentBatch || state.batchIndex >= state.currentBatch.length) planBatch();
-  if (!state.currentBatch || state.batchIndex >= state.currentBatch.length) return null;
-  return state.currentBatch[state.batchIndex++];
+  
+  if (pool.length === 0) return null;
+  
+  // Score by Fisher Information, pick from top 3
+  let scored = pool.map(q => ({
+    ...q, info: 1 / (1 + Math.exp(-Math.max(-20, Math.min(20, state.theta - D[q.level])))) * (1 - 1 / (1 + Math.exp(-Math.max(-20, Math.min(20, state.theta - D[q.level])))))
+  }));
+  scored.sort((a, b) => b.info - a.info);
+  let idx = Math.floor(Math.random() * Math.min(3, scored.length));
+  state.administeredIds.push(scored[idx].id);
+  return scored[idx];
 }
 >
