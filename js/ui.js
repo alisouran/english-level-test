@@ -1,11 +1,14 @@
 /* ═══════════════════════════════════════════════════════
    LingoQuest — DOM Rendering (UI)
    Glassmorphism, micro-animations, confetti, skeleton,
-   CEFR ladder redesign, ARIA updates, focus management
+   CEFR ladder (evidence-based), ARIA, focus management
    ═══════════════════════════════════════════════════════ */
 
 import { CEFR, ITEM_DIFFICULTY, getItemDifficulty, QUESTIONS } from "./questions.js";
 import { state } from "./state.js";
+import { buildResultData, isBandSupported } from "./engine.js";
+
+const LEVEL_LABELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
 /* ── ARIA live region helper ──────────── */
 export function announce(msg) {
@@ -50,12 +53,29 @@ export function updateTopBar() {
   const progressTrack = document.querySelector(".progress-track");
 
   if (score) score.textContent = state.totalCorrect + " / " + state.totalQuestions;
+
   if (level) {
-    level.textContent = CEFR[state.level] || "A1";
-    level.setAttribute("aria-label", "Current level: " + (CEFR[state.level] || "A1"));
+    // Show conservative evidence-based level; never display theta-derived
+    // provisional bands as results.
+    // Show evidence-based level when available; otherwise provisional indicator
+    const reported = state.reportedLevel;
+    const phase = state.phase;
+    let displayLevel, ariaLabel;
+    if (reported >= 0 && phase === "result") {
+      displayLevel = LEVEL_LABELS[reported];
+      ariaLabel = "Reported level: " + LEVEL_LABELS[reported];
+    } else if (reported >= 0) {
+      displayLevel = "Provisional " + LEVEL_LABELS[reported];
+      ariaLabel = "Provisional level: " + LEVEL_LABELS[reported];
+    } else {
+      displayLevel = "Provisional —";
+      ariaLabel = "Provisional: level not yet determined";
+    }
+    level.textContent = displayLevel;
+    level.setAttribute("aria-label", ariaLabel);
   }
 
-  // Badge pulse when level changes
+  // Badge pulse when theta-based level changes
   if (level && state.level !== state.prevLevel && state.totalQuestions > 1) {
     level.classList.remove("badge-pulse");
     void level.offsetWidth;
@@ -96,7 +116,9 @@ export function showSkeleton(visible) {
 export function renderQuestion(q, qNum) {
   const total = Math.min(qNum + 5, 40);
   document.getElementById("qNum").textContent = qNum + " / " + total;
-  document.getElementById("qLevel").textContent = CEFR[state.level] || "A1";
+  // This badge describes the item, not a claim about the learner.
+  document.getElementById("qLevel").textContent = CEFR[q.level !== undefined ? q.level : 0] || "A1";
+  document.getElementById("qLevel").setAttribute("aria-label", "Item difficulty band: " + (CEFR[q.level !== undefined ? q.level : 0] || "A1"));
   document.getElementById("qCategory").textContent = q.type + " · " + q.cat;
   document.getElementById("qText").textContent = q.q;
 
@@ -185,42 +207,74 @@ export function getEssayPrompts() {
   return ESSAY_PROMPTS;
 }
 
-/* ── CEFR ladder ───────────────────────── */
-export function renderCEFRLadder(theta, levelIdx) {
+/* ── CEFR ladder (evidence-based) ────────
+ *
+ * Shows each CEFR level with its status:
+ *   Demonstrated — attempted >= 2 and accuracy >= 50%
+ *   Tested       — attempted >= 1 but insufficient evidence
+ *   Not tested   — no items attempted at this level
+ *   Current      — the reported (evidence-based) level
+ * ──────────────────────────────────────── */
+export function renderCEFRLadder() {
   const ladder = document.getElementById("cefrLadder");
   if (!ladder) return;
   ladder.innerHTML = "";
-  const levels = ["A1", "A2", "B1", "B2", "C1", "C2"];
-  levels.forEach((lvl, i) => {
+  const p = state.perLevel;
+  const reported = state.reportedLevel;
+
+  LEVEL_LABELS.forEach((lvl, i) => {
     const rung = document.createElement("div");
     rung.className = "cefr-rung";
     rung.setAttribute("role", "listitem");
 
+    const att = p.attempts[i];
+    const corr = p.correct[i];
+    const acc = att > 0 ? Math.round((corr / att) * 100) : 0;
+
     let label = lvl;
-    if (i < levelIdx) {
-      rung.classList.add("achieved");
-      label += " achieved";
-    }
-    if (i === levelIdx) {
+    let statusText = "";
+
+    // Determine status
+    if (i === reported && reported >= 0) {
       rung.classList.add("current");
-      label += " current level";
-    }
-    // Mark levels where at least one question was answered
-    if (state.responses.some(r => {
-      const b = getItemDifficulty(r.qId);
-      const levelFromDiff = ITEM_DIFFICULTY.findIndex(d => d >= b);
-      return levelFromDiff === i;
-    })) {
-      if (i !== levelIdx && i >= levelIdx) {
-        rung.classList.add("tried");
+      statusText = "current level";
+    } else if (isBandSupported(i)) {
+      // Demonstrated (but not the reported level if reported is lower)
+      if (i < reported || reported < 0) {
+        rung.classList.add("demonstrated");
+        statusText = "demonstrated";
       }
     }
 
+    if (att > 0 && !rung.classList.contains("current") && !rung.classList.contains("demonstrated")) {
+      rung.classList.add("tested");
+      statusText = "tested";
+    }
+
+    if (att === 0) {
+      rung.classList.add("not-tested");
+      statusText = "not tested";
+    }
+
+    // Build label with stats
+    if (att > 0) {
+      label = lvl + " (" + corr + "/" + att + ", " + acc + "%)";
+    } else {
+      label = lvl + " (—)";
+    }
+    label += " " + statusText;
+
     rung.textContent = lvl;
+    if (att > 0) {
+      const stat = document.createElement("span");
+      stat.className = "rung-stat";
+      stat.textContent = corr + "/" + att;
+      rung.appendChild(stat);
+    }
     rung.setAttribute("aria-label", label);
+
     ladder.appendChild(rung);
   });
-  announce("CEFR level: " + (CEFR[state.level] || "A1"));
 }
 
 /* ── Result rendering ──────────────────── */
@@ -229,57 +283,87 @@ export function renderResult() {
   const correct = state.totalCorrect;
   const accuracy = n > 0 ? Math.round((correct / n) * 100) : 0;
   const avgTime = state.perQTime ? state.perQTime.toFixed(1) : "0.0";
+  const reported = state.reportedLevel;
+  const reportedLabel = reported >= 0 ? LEVEL_LABELS[reported] : "Inconclusive";
 
+  // Main result level
   const resultLevel = document.getElementById("resultLevel");
   if (resultLevel) {
-    resultLevel.textContent = CEFR[state.level] || "A1";
-    resultLevel.setAttribute("aria-label", "Estimated CEFR Level: " + (CEFR[state.level] || "A1"));
+    resultLevel.textContent = reportedLabel;
+    resultLevel.setAttribute("aria-label", "Evidence-based level: " + reportedLabel);
   }
   document.getElementById("sCorrect").textContent = correct;
   document.getElementById("sTotal").textContent = n;
   document.getElementById("sAccuracy").textContent = accuracy + "%";
   document.getElementById("sTime").textContent = avgTime + "s";
 
-  renderCEFRLadder(state.theta, state.level);
-  renderPromptJSON(correct, n, accuracy, avgTime);
+  // Stop reason
+  const stopReasonEl = document.getElementById("stopReason");
+  if (stopReasonEl) {
+    stopReasonEl.textContent = state.stopReason || "Test completed.";
+  }
+
+  // Per-level stats table
+  renderPerLevelStats();
+
+  // CEFR ladder
+  renderCEFRLadder();
+
+  // JSON output
+  renderPromptJSON();
+}
+
+/* ── Per-level stats table ─────────────── */
+function renderPerLevelStats() {
+  const container = document.getElementById("perLevelStats");
+  if (!container) return;
+  const p = state.perLevel;
+  const reported = state.reportedLevel;
+
+  let html = `<table class="perlevel-table" aria-label="Per-level performance">
+    <thead><tr>
+      <th>Level</th><th>Attempted</th><th>Correct</th><th>Accuracy</th><th>Status</th>
+    </tr></thead><tbody>`;
+
+  LEVEL_LABELS.forEach((lvl, i) => {
+    const att = p.attempts[i];
+    const corr = p.correct[i];
+    const acc = att > 0 ? Math.round((corr / att) * 100) : 0;
+    let status;
+    let cls = "";
+    if (i === reported && reported >= 0) {
+      status = "✓ Reported";
+      cls = "level-current";
+    } else if (isBandSupported(i)) {
+      status = "✓ Demonstrated";
+      cls = "level-demonstrated";
+    } else if (att > 0) {
+      status = "— Tested";
+      cls = "level-tested";
+    } else {
+      status = "○ Not tested";
+      cls = "level-untested";
+    }
+    html += `<tr class="${cls}">
+      <td class="level-label">${lvl}</td>
+      <td>${att}</td>
+      <td>${corr}</td>
+      <td>${att > 0 ? acc + "%" : "—"}</td>
+      <td>${status}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table>`;
+  container.innerHTML = html;
 }
 
 /* ── AI Assessment JSON ────────────────── */
-function renderPromptJSON(correct, total, accuracy, avgTime) {
+export function renderPromptJSON() {
   const out = document.getElementById("promptOutput");
   if (!out) return;
-
-  const prompt = {
-    test: "LingoQuest Adaptive English Level Test",
-    theta: state.theta,
-    estimated_cefr_level: CEFR[state.level] || "A1",
-    stats: {
-      questions_answered: total,
-      correct,
-      accuracy: accuracy + "%",
-      avg_time_per_question: avgTime + "s",
-    },
-    responses: state.responses.map(r => ({
-      question_id: r.qId,
-      question_text: r.questionText || "",
-      options: r.options || [],
-      selected_answer: r.selectedAnswer !== undefined ? r.selectedAnswer : -1,
-      correct_answer: (() => {
-        // Look up the correct answer index from the question data
-        const question = QUESTIONS.find(q => q.id === r.qId);
-        return question ? question.a : -1;
-      })(),
-      correct: r.correct,
-      difficulty: getItemDifficulty(r.qId),
-      time_taken: r.time.toFixed(1) + "s",
-    })),
-    essays: state.essays.filter(e => e && !e.skipped).map(e => ({
-      prompt_index: e.prompt + 1,
-      text: e.text,
-    })),
-  };
-
-  out.textContent = JSON.stringify(prompt, null, 2);
+  // Use the single production builder from engine.js
+  const data = buildResultData();
+  out.textContent = JSON.stringify(data, null, 2);
 }
 
 /* ── Confetti ──────────────────────────── */

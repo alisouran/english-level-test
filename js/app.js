@@ -5,7 +5,7 @@
 
 import { QUESTIONS } from "./questions.js";
 import { state, resetState, recordResponse, recordEssay } from "./state.js";
-import { eapEstimate, levelFromTheta, pickQuestion, shouldStop } from "./engine.js";
+import { eapEstimate, levelFromTheta, computeReportedLevel, pickQuestion, shouldStop } from "./engine.js";
 import {
   showScreen, updateTopBar, renderQuestion, showAnswerFeedback,
   renderEssay, renderResult, showToast, getEssayPrompts,
@@ -23,6 +23,8 @@ function startTest() {
   state.testStartTime = Date.now();
   state.prevLevel = 0;
   state.level = 0;
+  state.reportedLevel = -1;
+  state.stopReason = "";
 
   showSkeleton(true);
   showScreen("screen-question");
@@ -39,6 +41,7 @@ function startTest() {
 function loadNextQuestion() {
   const q = pickQuestion(QUESTIONS);
   if (!q) {
+    state.stopReason = "All questions have been answered.";
     finishTest();
     return;
   }
@@ -70,16 +73,16 @@ function onOptionClick(e) {
   inputLocked = true;
 
   const correct = idx === q.a;
-  const b = q.level !== undefined
-    ? [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0][Math.min(5, q.level)]
-    : 0;
+  const qLevel = q.level !== undefined ? Math.min(5, q.level) : 0;
+  const b = [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0][qLevel];
 
-  recordResponse(q.id, correct, b, q.q, q.opts, idx);
+  recordResponse(q.id, correct, b, q.q, q.opts, idx, qLevel);
   showAnswerFeedback(idx, q.a);
 
   state.theta = eapEstimate(state.responses);
   state.prevLevel = state.level;
   state.level = levelFromTheta(state.theta);
+  state.reportedLevel = computeReportedLevel();
 
   // Update qNum for the just-answered question
   document.getElementById("qNum").textContent = state.totalQuestions + " / " + Math.min(state.totalQuestions + 5, 40);
@@ -88,7 +91,7 @@ function onOptionClick(e) {
 
   // Show skeleton during transition
   setTimeout(() => {
-    if (shouldStop()) {
+    if (shouldStop(QUESTIONS)) {
       finishTest();
     } else {
       showSkeleton(true);
@@ -106,6 +109,7 @@ function finishTest() {
   state.phase = "essay";
   state.prevLevel = state.level;
   state.level = levelFromTheta(state.theta);
+  state.reportedLevel = computeReportedLevel();
 
   renderEssay(0);
   showScreen("screen-essay");
@@ -156,11 +160,13 @@ function advanceEssay() {
 /* ── Show results ──────────────────────── */
 function showResults() {
   state.phase = "result";
+  state.reportedLevel = computeReportedLevel();
   renderResult();
   showScreen("screen-result");
   updateTopBar();
   bindResultListeners();
-  announce("Test complete. Estimated level: " + (state.level !== undefined ? ["A1","A2","B1","B2","C1","C2"][state.level] : ""));
+  const rl = state.reportedLevel >= 0 ? ["A1","A2","B1","B2","C1","C2"][state.reportedLevel] : "Inconclusive";
+  announce("Test complete. Evidence-based level: " + rl + ". See results for details.");
   // Fire confetti on result reveal
   setTimeout(() => fireConfetti(), 500);
 }

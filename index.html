@@ -62,7 +62,7 @@
           </svg>
         </div>
         <h1 class="ws-h1">Find Your <span>English Level</span></h1>
-        <p class="ws-desc">An adaptive test that finds your real CEFR level — from A1 to C2. Answer ~25 smart questions, write a short essay, and get an AI-ready assessment.</p>
+        <p class="ws-desc">An adaptive multiple-choice test of grammar, vocabulary, and reading — from A1 to C2. Answer ~25 questions, optionally write a short essay, and get an evidence-based result with honest limitations noted.</p>
         <div class="features" role="list" aria-label="Test features">
           <span role="listitem" class="ws-pill">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -102,7 +102,7 @@
     <section class="screen" id="screen-question" aria-label="Question screen">
       <div class="quest-header">
         <span class="q-num" id="qNum" aria-label="Question number">1 / 25</span>
-        <span class="q-level" id="qLevel" aria-label="Question level">A2</span>
+        <span class="q-level" id="qLevel" aria-label="Item difficulty band">A2</span>
       </div>
       <div class="quest-category" id="qCategory" aria-label="Category">Grammar</div>
       <div class="quest-text" id="qText" role="heading" aria-level="2">Loading...</div>
@@ -137,7 +137,7 @@
           <nav class="cefr-ladder" id="cefrLadder" aria-label="CEFR level ladder" role="list"></nav>
           <div class="result-level-group">
             <div class="est-level" id="resultLevel">B1</div>
-            <p class="result-level-label">Estimated CEFR Level</p>
+            <p class="result-level-label" id="resultLevelLabel">Evidence-Based Level</p>
           </div>
         </header>
         <div class="stat-grid" id="statGrid" aria-label="Test statistics" role="list">
@@ -147,9 +147,27 @@
           <div class="stat-card" role="listitem"><div class="num" id="sTime">0s</div><div class="label">Avg Time</div></div>
         </div>
 
+        <p class="stop-reason" id="stopReason" aria-live="polite"></p>
+
+        <h3 class="result-section-heading">📋 Per-Level Breakdown</h3>
+        <div id="perLevelStats" aria-label="Performance by CEFR level"></div>
+
         <h3 class="result-section-heading">🤖 AI Assessment Prompt</h3>
-        <p class="result-section-desc">Copy this JSON and send it to any AI to get a detailed level assessment.</p>
+        <p class="result-section-desc">Copy this JSON to review your question-bank evidence and its limitations; it cannot certify overall English proficiency.</p>
         <div class="prompt-output" id="promptOutput" role="region" aria-label="Assessment JSON" tabindex="0"></div>
+
+        <div class="limitations-box" role="note" aria-label="Important limitations">
+          <h3>⚠️ What This Test Cannot Do</h3>
+          <p>This test uses grammar, vocabulary, and short reading multiple-choice questions. It <strong>cannot</strong> assess:</p>
+          <ul>
+            <li>Listening comprehension</li>
+            <li>Speaking ability (pronunciation, fluency, interaction)</li>
+            <li>Writing proficiency (the optional essay is collected but not scored)</li>
+            <li>Real-world communicative competence</li>
+          </ul>
+          <p>The reported level reflects performance on this specific question bank only and is not a certified CEFR assessment. Item difficulties are heuristic mappings, not empirically calibrated parameters.</p>
+        </div>
+
         <div class="result-actions">
           <button class="btn-primary" id="btnCopy" type="button">📋 Copy Prompt</button>
           <button class="btn-secondary" id="btnDownload" type="button">⬇️ Download JSON</button>

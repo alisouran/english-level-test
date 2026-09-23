@@ -5,7 +5,8 @@
 export const state = {
   phase: "idle",           // idle | testing | essay | result
   theta: 0,
-  level: 0,               // CEFR index 0-5
+  level: 0,               // CEFR index 0-5 (theta-based, for selection heuristics)
+  reportedLevel: -1,      // evidence-based level (-1 = inconclusive)
   prevLevel: 0,
   currentQ: null,
   currentIdx: 0,
@@ -18,12 +19,19 @@ export const state = {
   totalCorrect: 0,
   totalQuestions: 0,
   testStartTime: 0,
+  perLevel: {             // per-level attempt/correct counts
+    attempts: [0, 0, 0, 0, 0, 0],  // A1 A2 B1 B2 C1 C2
+    correct: [0, 0, 0, 0, 0, 0],
+  },
+  // Reason test stopped for result display
+  stopReason: "",
 };
 
 export function resetState() {
   state.phase = "idle";
   state.theta = 0;
   state.level = 0;
+  state.reportedLevel = -1;
   state.prevLevel = 0;
   state.currentQ = null;
   state.currentIdx = 0;
@@ -36,14 +44,21 @@ export function resetState() {
   state.totalCorrect = 0;
   state.totalQuestions = 0;
   state.testStartTime = 0;
+  state.perLevel = { attempts: [0,0,0,0,0,0], correct: [0,0,0,0,0,0] };
+  state.stopReason = "";
 }
 
-export function recordResponse(qId, correct, b, questionText, options, selectedAnswer) {
+export function recordResponse(qId, correct, b, questionText, options, selectedAnswer, questionLevel) {
   const now = Date.now();
   const timeTaken = state.lastQTime ? (now - state.lastQTime) / 1000 : 0;
   state.responses.push({qId, correct, time: timeTaken, b, questionText, options, selectedAnswer});
   if (correct) state.totalCorrect++;
   state.totalQuestions++;
+  // Track per-level stats
+  if (questionLevel !== undefined && questionLevel >= 0 && questionLevel <= 5) {
+    state.perLevel.attempts[questionLevel]++;
+    if (correct) state.perLevel.correct[questionLevel]++;
+  }
   state.perQTime = state.perQTime
     ? (state.perQTime * (state.totalQuestions - 1) + timeTaken) / state.totalQuestions
     : timeTaken;
