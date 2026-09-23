@@ -5,7 +5,7 @@
 
 import { QUESTIONS } from "./questions.js";
 import { state, resetState, recordResponse, recordEssay } from "./state.js";
-import { eapEstimate, levelFromTheta, pickQuestion, shouldStop, INITIAL } from "./engine.js";
+import { eapEstimate, levelFromTheta, computeReportedLevel, pickQuestion, shouldStop, INITIAL } from "./engine.js";
 import {
   showScreen, updateTopBar, renderQuestion, showAnswerFeedback,
   renderEssay, renderResult, showToast, getEssayPrompts,
@@ -30,6 +30,8 @@ async function startTest() {
   state.testStartTime = Date.now();
   state.prevLevel = INITIAL;  // B1 start
   state.level = INITIAL;      // B1 start
+  state.reportedLevel = -1;
+  state.stopReason = "";
   state.userId = getUserId();
   state.resultId = crypto.randomUUID();
 
@@ -65,6 +67,7 @@ async function startTest() {
 function loadNextQuestion() {
   const q = pickQuestion(QUESTIONS);
   if (!q) {
+    state.stopReason = "Limited evidence: no unseen questions remain.";
     finishTest();
     return;
   }
@@ -98,7 +101,7 @@ function onOptionClick(e) {
   const correct = idx === q.a;
   const b = q.b !== undefined ? q.b : 0;
 
-  recordResponse(q.id, correct, b, q.q, q.opts, idx, q.id);
+  recordResponse(q.id, correct, b, q.q, q.opts, idx, q.level);
   showAnswerFeedback(idx, q.a);
 
   state.theta = eapEstimate(state.responses);
@@ -112,7 +115,7 @@ function onOptionClick(e) {
 
   // Show skeleton during transition
   setTimeout(() => {
-    if (shouldStop()) {
+    if (shouldStop(QUESTIONS)) {
       finishTest();
     } else {
       showSkeleton(true);
@@ -130,6 +133,7 @@ function finishTest() {
   state.phase = "essay";
   state.prevLevel = state.level;
   state.level = levelFromTheta(state.theta);
+  state.reportedLevel = computeReportedLevel();
 
   renderEssay(0);
   showScreen("screen-essay");
@@ -184,18 +188,20 @@ async function showResults() {
 
   state.duration = state.testStartTime ? Date.now() - state.testStartTime : 0;
   state.phase = "result";
+  state.reportedLevel = computeReportedLevel();
   renderResult();
   showScreen("screen-result");
   updateTopBar();
   bindResultListeners();
-  announce("Test complete. Estimated level: " + (state.level !== undefined ? ["A1","A2","B1","B2","C1","C2"][state.level] : ""));
+  const supportedBand = state.reportedLevel >= 0 ? ["A1","A2","B1","B2","C1","C2"][state.reportedLevel] : "Inconclusive";
+  announce("Test complete. Question-bank evidence: " + supportedBand + ". Listening and speaking were not assessed.");
 
   // Persist result to IndexedDB
   try {
     const userId = getUserId();
     const total = state.totalQuestions;
     const correct = state.totalCorrect;
-    const cefrLevel = ["A1","A2","B1","B2","C1","C2"][state.level] || "A1";
+    const cefrLevel = supportedBand;
 
     const resultData = {
       resultId: state.resultId,
@@ -204,7 +210,7 @@ async function showResults() {
       duration: state.duration,
       theta: state.theta,
       cefrLevel,
-      cefrIndex: state.level,
+      cefrIndex: state.reportedLevel,
       totalQuestions: total,
       totalCorrect: correct,
       avgTime: state.perQTime ? state.perQTime : 0,
@@ -212,7 +218,7 @@ async function showResults() {
       essays: state.essays.filter(e => e && !e.skipped),
       // Legacy fields for backward compat with old ui.js reads
       estimatedCefr: cefrLevel,
-      estimatedLevel: state.level,
+      estimatedLevel: state.reportedLevel,
       stats: {
         totalQuestions: total,
         correct,
@@ -231,7 +237,7 @@ async function showResults() {
       latestTheta: state.theta,
       latestCefr: cefrLevel,
       thetaHistory: [...(profile.thetaHistory || []), state.theta],
-      cefrHistory: [...(profile.cefrHistory || []), state.level],
+      cefrHistory: [...(profile.cefrHistory || []), state.reportedLevel],
       lastResultId: state.resultId,
     });
 

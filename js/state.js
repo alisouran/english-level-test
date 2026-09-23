@@ -22,6 +22,9 @@ export const state = {
   totalQuestions: 0,
   testStartTime: 0,
   duration: 0,            // total test duration in milliseconds
+  reportedLevel: -1,
+  perLevel: { attempts: [0,0,0,0,0,0], correct: [0,0,0,0,0,0] },
+  stopReason: "",
 };
 
 export function resetState() {
@@ -42,13 +45,22 @@ export function resetState() {
   state.totalQuestions = 0;
   state.testStartTime = 0;
   state.duration = 0;
+  state.reportedLevel = -1;
+  state.perLevel = { attempts: [0,0,0,0,0,0], correct: [0,0,0,0,0,0] };
+  state.stopReason = "";
   // userId and seenQuestionIds are deliberately preserved across test sessions
 }
 
-export function recordResponse(qId, correct, b, questionText, options, selectedAnswer, id) {
+export function recordResponse(qId, correct, b, questionText, options, selectedAnswer, questionLevel) {
   const now = Date.now();
   const timeTaken = state.lastQTime ? (now - state.lastQTime) / 1000 : 0;
-  state.responses.push({qId, id, correct, time: timeTaken, b, questionText, options, selectedAnswer});
+  state.responses.push({qId, id: qId, correct, time: timeTaken, b, questionText, options, selectedAnswer});
+  const level = Number.isInteger(questionLevel) && questionLevel >= 0 && questionLevel <= 5
+    ? questionLevel : ["a1","a2","b1","b2","c1","c2"].indexOf((qId || "").split("-")[0]);
+  if (level >= 0) {
+    state.perLevel.attempts[level]++;
+    if (correct) state.perLevel.correct[level]++;
+  }
   if (correct) state.totalCorrect++;
   state.totalQuestions++;
   state.perQTime = state.perQTime

@@ -574,6 +574,59 @@ body{
 }
 .result-level-label{color:var(--text-muted);font-size:0.85rem;margin-top:6px}
 
+/* ─── Stop reason ─── */
+.stop-reason{
+  font-size:0.75rem;color:var(--text-muted);text-align:center;
+  margin-bottom:1rem;padding:8px 12px;
+  background:var(--bg-glass);border-radius:var(--radius-md);
+  border:var(--border-glass);
+}
+
+/* ─── Per-level stats table ─── */
+#perLevelStats{margin-bottom:1.2rem}
+.perlevel-table{
+  width:100%;border-collapse:collapse;
+  background:var(--bg-glass);backdrop-filter:blur(12px) saturate(1.2);
+  -webkit-backdrop-filter:blur(12px) saturate(1.2);
+  border:var(--border-glass);border-radius:var(--radius-md);
+  overflow:hidden;font-size:0.85rem;
+}
+.perlevel-table th{
+  padding:10px 8px;text-align:center;font-size:0.7rem;
+  text-transform:uppercase;letter-spacing:0.8px;
+  color:var(--text-muted);font-weight:600;
+  background:rgba(0,0,0,0.15);border-bottom:var(--border-glass);
+}
+.perlevel-table td{
+  padding:8px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.perlevel-table .level-label{font-weight:700;font-size:0.9rem}
+.perlevel-table tr.level-current{background:rgba(92,170,116,0.08);color:#7cca94}
+.perlevel-table tr.level-current .level-label{color:#7cca94}
+.perlevel-table tr.level-demonstrated{background:rgba(108,92,231,0.06);color:var(--accent-2)}
+.perlevel-table tr.level-tested{color:var(--text-secondary)}
+.perlevel-table tr.level-untested{color:var(--text-muted);opacity:0.6}
+
+/* ─── Limitations box ─── */
+.limitations-box{
+  background:rgba(229,115,115,0.06);
+  border:1px solid rgba(229,115,115,0.15);
+  border-radius:var(--radius-md);padding:16px;
+  margin:1rem 0;
+}
+.limitations-box h3{
+  font-size:0.85rem;font-weight:700;color:var(--error);
+  margin-bottom:8px;
+}
+.limitations-box p{
+  font-size:0.8rem;color:var(--text-secondary);line-height:1.6;
+  margin-bottom:8px;
+}
+.limitations-box ul{
+  margin:4px 0 10px 1.2rem;font-size:0.8rem;color:var(--text-secondary);
+}
+.limitations-box li{margin-bottom:4px;line-height:1.5}
+
 /* ─── CEFR visual ladder ─── */
 .cefr-ladder{
   display:flex;justify-content:center;align-items:stretch;
@@ -603,12 +656,12 @@ body{
 }
 .cefr-rung:last-child::after{display:none}
 
-/* Achieved levels (below current) */
-.cefr-rung.achieved{
+/* Demonstrated levels (met evidence criteria) */
+.cefr-rung.demonstrated{
   background:linear-gradient(135deg,rgba(108,92,231,0.2),rgba(162,155,254,0.15));
   color:var(--accent-2);border-color:rgba(108,92,231,0.3);
 }
-/* Current level */
+/* Current reported level */
 .cefr-rung.current{
   background:linear-gradient(135deg,rgba(92,170,116,0.25),rgba(124,202,148,0.15));
   color:#7cca94;border-color:rgba(92,170,116,0.4);
@@ -616,10 +669,19 @@ body{
   transform:scale(1.12);
   z-index:2;
 }
-/* Tried but not achieved */
-.cefr-rung.tried:not(.achieved):not(.current){
-  background:rgba(108,92,231,0.1);color:var(--accent-2);
-  border-color:rgba(108,92,231,0.2);
+/* Tested but insufficient evidence */
+.cefr-rung.tested:not(.demonstrated):not(.current){
+  background:rgba(108,92,231,0.08);color:var(--accent-2);
+  border-color:rgba(108,92,231,0.15);opacity:0.8;
+}
+/* Not tested at all */
+.cefr-rung.not-tested{
+  opacity:0.4;
+}
+/* Small stat label inside rung */
+.cefr-rung .rung-stat{
+  display:block;font-size:0.55rem;font-weight:400;
+  margin-top:2px;color:inherit;opacity:0.7;
 }
 
 /* Stat grid */
