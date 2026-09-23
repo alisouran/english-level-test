@@ -5,13 +5,15 @@
 export const state = {
   phase: "idle",           // idle | testing | essay | result
   theta: 0,
-  level: 0,               // CEFR index 0-5 (theta-based, for selection heuristics)
-  reportedLevel: -1,      // evidence-based level (-1 = inconclusive)
+  level: 0,               // CEFR index 0-5
   prevLevel: 0,
   currentQ: null,
   currentIdx: 0,
+  userId: "",             // set from db.js getUserId()
   adminIds: new Set(),
-  responses: [],          // {qId, correct, time, b}
+  seenQuestionIds: new Set(),  // persisted across sessions via db.js
+  resultId: "",           // UUID set when saving a result
+  responses: [],          // {qId, correct, time, b, id, questionText, options, selectedAnswer}
   essays: [],             // [{prompt, text, skipped}]
   startTime: 0,
   perQTime: 0,
@@ -19,11 +21,9 @@ export const state = {
   totalCorrect: 0,
   totalQuestions: 0,
   testStartTime: 0,
-  perLevel: {             // per-level attempt/correct counts
-    attempts: [0, 0, 0, 0, 0, 0],  // A1 A2 B1 B2 C1 C2
-    correct: [0, 0, 0, 0, 0, 0],
-  },
-  // Reason test stopped for result display
+  duration: 0,            // total test duration in milliseconds
+  reportedLevel: -1,
+  perLevel: { attempts: [0,0,0,0,0,0], correct: [0,0,0,0,0,0] },
   stopReason: "",
 };
 
@@ -31,11 +31,11 @@ export function resetState() {
   state.phase = "idle";
   state.theta = 0;
   state.level = 0;
-  state.reportedLevel = -1;
   state.prevLevel = 0;
   state.currentQ = null;
   state.currentIdx = 0;
   state.adminIds = new Set();
+  state.resultId = "";
   state.responses = [];
   state.essays = [];
   state.startTime = 0;
@@ -44,21 +44,25 @@ export function resetState() {
   state.totalCorrect = 0;
   state.totalQuestions = 0;
   state.testStartTime = 0;
+  state.duration = 0;
+  state.reportedLevel = -1;
   state.perLevel = { attempts: [0,0,0,0,0,0], correct: [0,0,0,0,0,0] };
   state.stopReason = "";
+  // userId and seenQuestionIds are deliberately preserved across test sessions
 }
 
 export function recordResponse(qId, correct, b, questionText, options, selectedAnswer, questionLevel) {
   const now = Date.now();
   const timeTaken = state.lastQTime ? (now - state.lastQTime) / 1000 : 0;
-  state.responses.push({qId, correct, time: timeTaken, b, questionText, options, selectedAnswer});
+  state.responses.push({qId, id: qId, correct, time: timeTaken, b, questionText, options, selectedAnswer});
+  const level = Number.isInteger(questionLevel) && questionLevel >= 0 && questionLevel <= 5
+    ? questionLevel : ["a1","a2","b1","b2","c1","c2"].indexOf((qId || "").split("-")[0]);
+  if (level >= 0) {
+    state.perLevel.attempts[level]++;
+    if (correct) state.perLevel.correct[level]++;
+  }
   if (correct) state.totalCorrect++;
   state.totalQuestions++;
-  // Track per-level stats
-  if (questionLevel !== undefined && questionLevel >= 0 && questionLevel <= 5) {
-    state.perLevel.attempts[questionLevel]++;
-    if (correct) state.perLevel.correct[questionLevel]++;
-  }
   state.perQTime = state.perQTime
     ? (state.perQTime * (state.totalQuestions - 1) + timeTaken) / state.totalQuestions
     : timeTaken;

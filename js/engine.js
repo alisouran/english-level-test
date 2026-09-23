@@ -38,7 +38,7 @@ PRIOR.forEach((v, i) => PRIOR[i] = v / PRIOR_SUM);
 const MIN_QS = 10;
 const MAX_QS = 40;
 const THETA_SE = 0.45;
-const INITIAL = 0; // A1 starting level index
+export const INITIAL = 2; // B1 starting level index
 
 /* ── Evidence thresholds (product rules, not validated cut scores) ── */
 // Minimum attempts per level to consider it demonstrated
@@ -180,7 +180,7 @@ export function shouldStop(QUESTIONS) {
       state.stopReason = "Question bank exhausted.";
       return true;
     }
-    const remaining = QUESTIONS.filter(q => !state.adminIds.has(q.id));
+    const remaining = QUESTIONS.filter(q => !state.adminIds.has(q.id) && !state.seenQuestionIds?.has(q.id));
     if (remaining.length === 0) {
       state.stopReason = "Question bank exhausted.";
       return true;
@@ -194,12 +194,12 @@ export function shouldStop(QUESTIONS) {
   const thetaLevel = levelFromTheta(state.theta);
   const hasEvidence = isBandSupported;
   if (thetaLevel === 5 && !hasEvidence(4)) {
-    if (QUESTIONS.some(q => q.level === 4 && !state.adminIds.has(q.id))) return false;
+    if (QUESTIONS.some(q => q.level === 4 && !state.adminIds.has(q.id) && !state.seenQuestionIds?.has(q.id))) return false;
     state.stopReason = "Limited evidence: no C1 questions remain for the C2 prerequisite.";
     return true;
   }
   if (!hasEvidence(thetaLevel)) {
-    if (QUESTIONS.some(q => q.level === thetaLevel && !state.adminIds.has(q.id))) return false;
+    if (QUESTIONS.some(q => q.level === thetaLevel && !state.adminIds.has(q.id) && !state.seenQuestionIds?.has(q.id))) return false;
     state.stopReason = "Limited evidence: no unused questions remain at the candidate band.";
     return true;
   }
@@ -239,11 +239,11 @@ export function pickQuestion(QUESTIONS) {
 
   // First question: pick from A1–A2 difficulty
   if (used.size === 0) {
-    const candidates = QUESTIONS.filter(q => Math.abs(getItemDifficulty(q.id) - ITEM_DIFFICULTY[INITIAL]) < 0.5);
+    const candidates = QUESTIONS.filter(q => Math.abs((q.b ?? getItemDifficulty(q.id)) - ITEM_DIFFICULTY[INITIAL]) < 0.5 && !state.seenQuestionIds?.has(q.id));
     if (candidates.length > 0) {
       return candidates[Math.floor(Math.random() * candidates.length)];
     }
-    return QUESTIONS[0];
+    return QUESTIONS.find(q => !state.seenQuestionIds?.has(q.id)) || null;
   }
 
   // Theta-based level for selection heuristics; state.level may lag behind theta.
@@ -259,7 +259,7 @@ export function pickQuestion(QUESTIONS) {
     const c1AccuracyOK = c1Attempts >= MIN_ATTEMPTS_DEMONSTRATED &&
       state.perLevel.correct[4] / c1Attempts >= MIN_ACCURACY;
     if (!c1AccuracyOK) {
-      const c1Remaining = QUESTIONS.filter(q => q.level === 4 && !used.has(q.id));
+      const c1Remaining = QUESTIONS.filter(q => q.level === 4 && !used.has(q.id) && !state.seenQuestionIds?.has(q.id));
       if (c1Remaining.length > 0) probeLevel = 4;
     }
   }
@@ -269,14 +269,14 @@ export function pickQuestion(QUESTIONS) {
 
   // Probe the specific unmet level before sampling neighboring bands.
   if (probeLevel >= 0) {
-    const probes = QUESTIONS.filter(q => q.level === probeLevel && !used.has(q.id));
+    const probes = QUESTIONS.filter(q => q.level === probeLevel && !used.has(q.id) && !state.seenQuestionIds?.has(q.id));
     if (probes.length) return probes[0];
   }
 
   // Candidates within difficulty range, not used
   let candidates = QUESTIONS.filter(q => {
-    const d = getItemDifficulty(q.id);
-    return d >= minD && d <= maxD && !used.has(q.id);
+    const d = q.b ?? getItemDifficulty(q.id);
+    return d >= minD && d <= maxD && !used.has(q.id) && !state.seenQuestionIds?.has(q.id);
   });
 
   // Give preference to probe level items
@@ -292,7 +292,7 @@ export function pickQuestion(QUESTIONS) {
 
   if (candidates.length === 0) {
     // Fallback: any unused question
-    candidates = QUESTIONS.filter(q => !used.has(q.id));
+    candidates = QUESTIONS.filter(q => !used.has(q.id) && !state.seenQuestionIds?.has(q.id));
   }
 
   if (candidates.length === 0) return null;
@@ -301,7 +301,7 @@ export function pickQuestion(QUESTIONS) {
   let best = null;
   let bestFi = -1;
   for (const q of candidates) {
-    const d = getItemDifficulty(q.id);
+    const d = q.b ?? getItemDifficulty(q.id);
     const fi = fisherInfo(theta, d);
     if (fi > bestFi) {
       bestFi = fi;
@@ -312,7 +312,7 @@ export function pickQuestion(QUESTIONS) {
   // Add small random noise to avoid always picking same diff
   if (candidates.length > 1) {
     const tie = candidates.filter(q => {
-      const d = getItemDifficulty(q.id);
+      const d = q.b ?? getItemDifficulty(q.id);
       return Math.abs(fisherInfo(theta, d) - bestFi) < 0.01;
     });
     if (tie.length > 1) best = tie[Math.floor(Math.random() * tie.length)];
@@ -364,7 +364,7 @@ export function buildResultData() {
       options: r.options || [],
       selected_answer: r.selectedAnswer !== undefined ? r.selectedAnswer : -1,
       correct: r.correct,
-      difficulty: getItemDifficulty(r.qId),
+      difficulty: r.b ?? getItemDifficulty(r.qId),
       time_taken: (r.time || 0).toFixed(1) + "s",
     })),
     essays: state.essays.filter(e => e && !e.skipped).map(e => ({

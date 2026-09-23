@@ -425,3 +425,91 @@ export function showToast(msg) {
   announce(msg);
   setTimeout(() => { toast.style.display = "none"; }, 2500);
 }
+
+/* ── History list ──────────────────────── */
+export function renderHistoryList(results) {
+  const list = document.getElementById("historyList");
+  const empty = document.getElementById("historyEmpty");
+  if (!list || !empty) return;
+
+  if (!results || results.length === 0) {
+    list.innerHTML = "";
+    empty.style.display = "";
+    return;
+  }
+
+  empty.style.display = "none";
+  list.innerHTML = results
+    .map(r => {
+      const date = r.timestamp ? new Date(r.timestamp).toLocaleDateString(undefined, {
+        year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+      }) : "Unknown date";
+      const level = r.cefrLevel || r.estimatedCefr || r.estimated_cefr_level || "—";
+      const theta = r.theta != null ? r.theta.toFixed(3) : "—";
+      const total = r.totalQuestions || r.stats?.totalQuestions || 0;
+      const correct = r.totalCorrect || r.stats?.correct || 0;
+      const accuracy = total > 0 ? Math.round((correct / total) * 100) + "%" : "—%";
+      const levelClass = (typeof level === "string" ? level : "—").toLowerCase().replace(/[^a-z0-9]/g, "");
+      return `
+        <button class="history-item" data-result-id="${r.resultId || ""}" type="button">
+          <span class="h-date">${date}</span>
+          <span class="h-level">${level}</span>
+          <span class="h-theta">θ=${theta}</span>
+          <span class="h-accuracy">${accuracy}</span>
+        </button>`;
+    })
+    .join("");
+}
+
+/* ── History detail (reuses result template) ──── */
+export function renderHistoryDetail(result) {
+  if (!result) return;
+
+  const n = result.totalQuestions || result.stats?.totalQuestions || 0;
+  const correct = result.totalCorrect || result.stats?.correct || 0;
+  const accuracy = n > 0 ? Math.round((correct / n) * 100) : 0;
+  const avgTime = result.avgTime || result.stats?.avgTime || result.stats?.avg_time_per_question?.replace("s", "") || "0.0";
+  const theta = result.theta || 0;
+  const cefrLevel = result.cefrLevel || result.estimatedCefr || result.estimated_cefr_level || "A1";
+  // CEFR is an object {0:"A1",...,5:"C2"} — find the key by value
+  const cefrValues = Object.values(CEFR);
+  const levelIdx = cefrValues.indexOf(cefrLevel);
+  const safeLevelIdx = levelIdx !== -1 ? levelIdx : 0;
+
+  const resultLevel = document.getElementById("resultLevel");
+  if (resultLevel) {
+    resultLevel.textContent = cefrLevel;
+    resultLevel.setAttribute("aria-label", "Historical CEFR Level: " + cefrLevel);
+  }
+  document.getElementById("sCorrect").textContent = String(correct);
+  document.getElementById("sTotal").textContent = String(n);
+  document.getElementById("sAccuracy").textContent = accuracy + "%";
+  document.getElementById("sTime").textContent = avgTime + "s";
+
+  // Temporarily override state so ladder/prompt helpers work
+  const savedTheta = state.theta;
+  const savedLevel = state.level;
+  state.theta = theta;
+  state.level = safeLevelIdx;
+
+  renderCEFRLadder(theta, safeLevelIdx);
+  renderPromptJSON(correct, n, accuracy, avgTime);
+
+  // Restore state
+  state.theta = savedTheta;
+  state.level = savedLevel;
+}
+
+/* ── Welcome returning ─────────────────── */
+export function renderWelcomeReturning(profile) {
+  const block = document.getElementById("welcomeReturning");
+  const levelEl = document.getElementById("returningLevel");
+  if (!block || !levelEl) return;
+
+  if (profile && profile.latestCefr) {
+    levelEl.textContent = profile.latestCefr;
+    block.style.display = "";
+  } else {
+    block.style.display = "none";
+  }
+}
